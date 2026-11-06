@@ -120,7 +120,7 @@ class ReportExporter(base: Context) {
 
     /** Minimal, dependency-free SpreadsheetML (.xlsx) writer: one sheet per table, inline strings. */
     private fun writeXlsx(tables: List<Table>, file: File) {
-        fun esc(x: String) = x.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("⁦", "").replace("⁩", "")
+        fun esc(x: String) = x.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace(Char(0x2066).toString(), "").replace(Char(0x2069).toString(), "")
         fun colName(i: Int): String { var n = i + 1; val sb = StringBuilder(); while (n > 0) { val r = (n - 1) % 26; sb.insert(0, ('A' + r)); n = (n - 1) / 26 }; return sb.toString() }
         ZipOutputStream(FileOutputStream(file)).use { z ->
             fun put(path: String, content: String) { z.putNextEntry(ZipEntry(path)); z.write(content.toByteArray(Charsets.UTF_8)); z.closeEntry() }

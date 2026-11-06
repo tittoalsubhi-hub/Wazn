@@ -96,7 +96,7 @@ object NumberInput {
                 ch in EXT_ARABIC_INDIC..(EXT_ARABIC_INDIC + 9) -> sb.append('0' + (ch - EXT_ARABIC_INDIC))
                 ch == '٫' -> sb.append('.')           // Arabic decimal separator
                 ch == '٬' || ch == ',' || ch == '،' -> {} // thousands separators
-                ch == '‏' || ch == '‎' || ch == ' ' || ch == ' ' -> {}
+                ch == Char(0x200F) || ch == Char(0x200E) || ch == Char(0x00A0) || ch == ' ' -> {}
                 ch == '−' -> sb.append('-')
                 else -> sb.append(ch)
             }

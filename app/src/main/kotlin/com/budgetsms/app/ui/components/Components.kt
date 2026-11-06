@@ -57,7 +57,7 @@ import java.util.Locale
 
 /** Locale-aware presentation only; values are never changed by formatting (spec §17). */
 object Fmt {
-    private const val LRI = "⁦"; private const val PDI = "⁩"
+    private val LRI = Char(0x2066).toString(); private val PDI = Char(0x2069).toString()
     fun isArabic(locale: Locale) = locale.language == "ar"
 
     fun money(m: Money, locale: Locale, masked: Boolean = false, currency: Boolean = true): String {
