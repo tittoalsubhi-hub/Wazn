@@ -92,15 +92,17 @@ fun AddProfileWizard(vm: AppViewModel, onDone: () -> Unit) {
                             SampleList(vm)
                         }
                     }
-                }
-                Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    if (step > 0) TextButton(onClick = { step-- }) { Text(stringResource(R.string.back)) } else Spacer(Modifier.width(1.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (step == 2) OutlinedButton(onClick = { vm.addProfileWithBank(name, type, sender!!, bankName); onDone() }) { Text(stringResource(R.string.samples_skip)) }
-                        Button(enabled = when (step) { 0 -> name.isNotBlank(); 1 -> sender != null && bankName.isNotBlank(); else -> true }, onClick = {
-                            if (step < 2) step++ else { vm.addProfileWithBank(name, type, sender!!, bankName); onDone() }
-                        }) { Text(stringResource(if (step < 2) R.string.next else R.string.create)) }
+                    // Actions sit right under the fields (centered), never under the phone's navigation bar.
+                    Spacer(Modifier.height(8.dp))
+                    Button(enabled = when (step) { 0 -> name.isNotBlank(); 1 -> sender != null && bankName.isNotBlank(); else -> true },
+                        onClick = { if (step < 2) step++ else { vm.addProfileWithBank(name, type, sender!!, bankName); onDone() } },
+                        modifier = Modifier.fillMaxWidth(0.7f).align(Alignment.CenterHorizontally)) {
+                        Text(stringResource(if (step < 2) R.string.next else R.string.create))
                     }
+                    if (step == 2) OutlinedButton(onClick = { vm.addProfileWithBank(name, type, sender!!, bankName); onDone() },
+                        modifier = Modifier.fillMaxWidth(0.7f).align(Alignment.CenterHorizontally)) { Text(stringResource(R.string.samples_skip)) }
+                    if (step > 0) TextButton(onClick = { step-- }, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text(stringResource(R.string.back)) }
+                    Spacer(Modifier.height(48.dp))
                 }
             }
         }
