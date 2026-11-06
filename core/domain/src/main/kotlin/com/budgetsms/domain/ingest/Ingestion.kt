@@ -88,8 +88,14 @@ class IngestionPipeline(
             val body = consent.readBodyIfApproved(msg.header.sender) { msg.bodySupplier() }
             if (body == null) { skipped += msg.header; continue }
             if (body.length > maxBodyLength) { rejected += msg.header to "body too long"; continue }
-            val verified = consent.bankFor(msg.header.sender)?.let { parsers.forBank(it).verifiedForBank } == true
-            val ignore = IgnoreFilter.reason(body, checkAmount = !verified)
+            val bank = consent.bankFor(msg.header.sender)
+            var ignore = IgnoreFilter.reason(body, checkAmount = false)
+            if (ignore == null && bank != null) {
+                // A general notice is a message where neither the bank/learned parser nor the currency rule finds an amount.
+                val parser = parsers.forBank(bank)
+                if (!parser.verifiedForBank && !GenericKeywordParser.hasCurrencyAmount(body) &&
+                    parser.parse(RawSms("", msg.header.sender, msg.header.receivedAt, body), zone).amount == null) ignore = IgnoreReason.INFORMATIONAL
+            }
             if (ignore != null) { ignored[ignore] = (ignored[ignore] ?: 0) + 1; if (ignore == IgnoreReason.ONE_TIME_CODE) otp++; continue }
             val fp = Fingerprint.of(msg.header.sender, msg.header.receivedAt, body)
             val sourceKey = "$fp|${msg.source}|${msg.sourceRecordId}"
@@ -167,6 +173,7 @@ class IngestionPipeline(
             state = state,
             reviewReasons = reasons,
             incomeTreatment = treatment,
+            categoryId = p.categoryHint,
             parserId = parser.id,
             parserVersion = parser.version,
         )
@@ -226,12 +233,13 @@ object OneTimeCodeFilter {
  * If no salary message is found, the last [fallbackDays] days are used. Only approved bodies are inspected.
  */
 object ImportWindow {
-    fun sinceLastSalary(batch: List<IncomingSms>, consent: ConsentGate, zone: ZoneId, now: Instant, fallbackDays: Long = 30): Pair<List<IncomingSms>, Instant?> {
+    fun sinceLastSalary(batch: List<IncomingSms>, consent: ConsentGate, zone: ZoneId, now: Instant, fallbackDays: Long = 30,
+                        parser: com.budgetsms.domain.sms.SmsParser = GenericKeywordParser): Pair<List<IncomingSms>, Instant?> {
         val approved = batch.filter { consent.isApproved(it.header.sender) }
         val salaryAt = approved.filter { m ->
             val body = m.bodySupplier()
             IgnoreFilter.reason(body) == null &&
-                GenericKeywordParser.parse(RawSms("", m.header.sender, m.header.receivedAt, body), zone).kind == EventKind.SALARY
+                parser.parse(RawSms("", m.header.sender, m.header.receivedAt, body), zone).kind == EventKind.SALARY
         }.maxOfOrNull { it.header.receivedAt }
         val from = salaryAt ?: now.minus(Duration.ofDays(fallbackDays))
         return approved.filter { !it.header.receivedAt.isBefore(from) } to salaryAt

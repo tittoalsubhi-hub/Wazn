@@ -22,6 +22,7 @@ data class ParsedSms(
     val balanceAfter: Money? = null,
     val confidence: Confidence,
     val reasons: Set<ReviewReason> = emptySet(),
+    val categoryHint: String? = null,
 )
 
 interface SmsParser {
@@ -49,6 +50,8 @@ object GenericKeywordParser : SmsParser {
     override val verifiedForBank = false
     override fun supports(bankId: String) = true
 
+    /** Public number pattern (one capturing group), used by learned templates. */
+    val NUMBER: String get() = num
     private val num = """([0-9٠-٩]{1,3}(?:[,٬][0-9٠-٩]{3})*(?:[.٫][0-9٠-٩]{1,2})?|[0-9٠-٩]+(?:[.٫][0-9٠-٩]{1,2})?)"""
     private val cur = """(SAR|SR|ر\.?س|ريال|USD|EUR|GBP|AED|KWD|BHD|QAR|OMR|EGP|JOD)"""
     // The amount is the number written next to the currency on the same line. Numbers touching "*" are

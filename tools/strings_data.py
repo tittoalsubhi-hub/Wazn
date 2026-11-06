@@ -1,6 +1,6 @@
 # key | English | Arabic  — single source for values/strings.xml and values-ar/strings.xml
 S = r"""
-app_name|BudgetSMS|ميزانية الرسائل
+app_name|Wazn|وازن
 tab_home|Home|الرئيسية
 tab_activity|Activity|العمليات
 tab_budget|Budget|الميزانية
@@ -305,7 +305,7 @@ export|Export|تصدير
 export_note|Reports separate confirmed, calculated, planned and forecast amounts and never double-count internal transfers.|تفصل التقارير المبالغ المؤكدة والمحسوبة والمخططة والمتوقعة ولا تكرر التحويلات الداخلية.
 export_pdf|PDF|PDF
 export_excel|Excel|Excel
-report_title|BudgetSMS financial report|تقرير ميزانية الرسائل المالي
+report_title|Wazn financial report|تقرير وازن المالي
 report_summary|Summary|الملخص
 report_item|Item|البند
 report_amount|Amount|المبلغ
@@ -376,7 +376,7 @@ pin|PIN|الرمز
 pin_again|Repeat PIN|أعد إدخال الرمز
 pin_wrong|Wrong PIN|رمز غير صحيح
 unlock|Unlock|فتح
-unlock_title|Unlock BudgetSMS|افتح ميزانية الرسائل
+unlock_title|Unlock Wazn|افتح وازن
 use_pin|Use PIN|استخدم الرمز
 use_biometric|Use fingerprint or face|استخدم البصمة أو الوجه
 secure_screen|Hide in recent apps|إخفاء في التطبيقات الأخيرة
@@ -422,7 +422,7 @@ cloud_backup_note|Cloud backup is off. Nothing is uploaded unless you configure 
 backup_password|Backup password|كلمة مرور النسخة
 backup_password_hint|At least 8 characters. It cannot be recovered.|٨ أحرف على الأقل. لا يمكن استرجاعها.
 welcome_title|Your budget, written by your bank|ميزانيتك تكتبها رسائل بنكك
-welcome_body|BudgetSMS builds your budget only from real bank messages — no manual postings, no guesses.|يبني التطبيق ميزانيتك من رسائل البنك الحقيقية فقط — بلا إدخال يدوي ولا تخمين.
+welcome_body|Wazn builds your budget only from real bank messages — no manual postings, no guesses.|يبني وازن ميزانيتك من رسائل البنك الحقيقية فقط — بلا إدخال يدوي ولا تخمين.
 feat_sms|Reads only senders you approve|يقرأ فقط الجهات التي تعتمدها
 feat_private|Encrypted and offline on your phone|مشفر ويعمل دون إنترنت على جهازك
 feat_custom|Colors, themes and motion your way|ألوان وسمات وحركة كما تحب
@@ -481,4 +481,26 @@ msg_import_no_salary|No salary message found; imported the last 30 days (%1$s)|�
 S += r"""
 field_amount_manual|Amount (edit if wrong)|المبلغ (عدّله إن كان خطأ)
 manual_amount_note|Use the amount written next to SAR in the message. Changes are recorded in the audit log.|استخدم المبلغ المكتوب بجانب SAR في الرسالة. يُسجَّل التعديل في سجل التدقيق.
+"""
+S += r"""
+samples_title|Teach Wazn your bank's messages|علّم وازن رسائل بنكك
+samples_body|Copy one message of each type from your bank's SMS and paste it here. Wazn learns where the amount and type are, then reads all similar messages. Only the wording is kept, not your numbers.|انسخ رسالة واحدة من كل نوع من رسائل بنكك والصقها هنا. يتعلم وازن مكان المبلغ ونوع العملية ثم يقرأ كل الرسائل المشابهة. تُحفظ الكلمات فقط وليس أرقامك.
+samples_skip|Skip|تجاوز
+samples_skip_note|You can add samples later from More › Message samples.|يمكنك إضافة النماذج لاحقاً من المزيد › نماذج الرسائل.
+message_samples|Message samples|نماذج الرسائل
+message_samples_sub|Teach the app your bank's formats|علّم التطبيق صيغ بنكك
+sample_purchase|Purchase|عملية شراء
+sample_salary|Salary deposit|إيداع راتب
+sample_card_repayment|Card repayment|سداد البطاقة
+sample_outgoing|Outgoing transfer|حوالة صادرة
+sample_incoming|Incoming transfer|حوالة واردة
+sample_bill|Bill payment|سداد فاتورة
+sample_added|Added|تمت الإضافة
+sample_add|Add sample|إضافة نموذج
+sample_paste_hint|Paste the bank message here|الصق رسالة البنك هنا
+paste|Paste|لصق
+sample_amount|Amount in this message|المبلغ في هذه الرسالة
+sample_amount_hint|Check it; correct it if the app picked the wrong number.|تأكد منه، وصحّحه إن اختار التطبيق رقماً خطأ.
+sample_saved_count|Learned formats: %1$d|الصيغ المتعلَّمة: %1$d
+msg_sample_saved|Sample learned; messages re-read|تم تعلّم النموذج وإعادة قراءة الرسائل
 """

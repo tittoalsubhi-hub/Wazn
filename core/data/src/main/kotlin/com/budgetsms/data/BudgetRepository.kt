@@ -18,6 +18,10 @@ import com.budgetsms.domain.sms.ConsentGate
 import com.budgetsms.domain.sms.ParserRegistry
 import com.budgetsms.domain.sms.SenderDiscovery
 import com.budgetsms.domain.sms.SenderNormalizer
+import com.budgetsms.domain.sms.LearnedParser
+import com.budgetsms.domain.sms.MessageTemplate
+import com.budgetsms.domain.sms.SampleType
+import com.budgetsms.domain.sms.TemplateLearner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -263,7 +267,7 @@ class BudgetRepository(
     /** Imports only the latest salary message and everything after it (fallback: last 30 days). */
     suspend fun ingestFromLastSalary(batch: List<IncomingSms>): Pair<IngestResult, Instant?> {
         val gate = ConsentGate(sms.approved().map { ApprovedSender(it.senderId, it.bankId, it.approvedAt.toInstant(), it.revokedAt?.toInstant()) })
-        val (window, salaryAt) = com.budgetsms.domain.ingest.ImportWindow.sinceLastSalary(batch, gate, zone, clock())
+        val (window, salaryAt) = com.budgetsms.domain.ingest.ImportWindow.sinceLastSalary(batch, gate, zone, clock(), parser = registry().forBank(""))
         return ingest(window) to salaryAt
     }
     suspend fun revokeSender(senderId: String) {
@@ -279,7 +283,7 @@ class BudgetRepository(
     suspend fun ingest(batch: List<IncomingSms>, batchId: String = id()): IngestResult = ingestMutex.withLock {
         val approved = sms.approved()
         val gate = ConsentGate(approved.map { ApprovedSender(it.senderId, it.bankId, it.approvedAt.toInstant(), it.revokedAt?.toInstant()) })
-        val pipeline = IngestionPipeline(gate, parsers, ledger.accounts().map { it.toDomain() }, zone, clock,
+        val pipeline = IngestionPipeline(gate, registry(), ledger.accounts().map { it.toDomain() }, zone, clock,
             autoConfirmSenders = approved.filter { it.autoConfirm && it.revokedAt == null }.map { it.senderId }.toSet())
         val existing = ledger.events()
         val state = IngestState(sms.allFingerprints().toSet(), sms.allSourceKeys().toSet(), existing.associate { it.id to it.toDomain() },
@@ -297,10 +301,41 @@ class BudgetRepository(
     }
 
     /** Re-runs the current parser over undecided events (idempotent; user decisions are never overwritten). */
-    suspend fun reprocessUndecided(): Int = ingestMutex.withLock {
+    // ---------------- learned message samples (v1.6) ----------------
+    private val K_SAMPLES = "samples.v1"
+
+    /** Templates learned from the user's samples (fixed words and amount anchors only; sample numbers are not kept). */
+    val templates: Flow<List<MessageTemplate>> = settings.observeSettings().map { l -> decodeTemplates(l.firstOrNull { it.key == K_SAMPLES }?.value) }
+
+    private suspend fun registry(): ParserRegistry = ParserRegistry(emptyList(), LearnedParser(decodeTemplates(settings.setting(K_SAMPLES))))
+
+    suspend fun saveSample(type: SampleType, sample: String, amount: Money?) {
+        val list = decodeTemplates(settings.setting(K_SAMPLES)) + TemplateLearner.learn(id(), type, sample, amount)
+        settings.upsertSetting(AppSettingEntity(K_SAMPLES, encodeTemplates(list))); audit("learn_sample", "MessageTemplate", type.name)
+    }
+    suspend fun deleteSample(templateId: String) {
+        val list = decodeTemplates(settings.setting(K_SAMPLES)).filter { it.id != templateId }
+        settings.upsertSetting(AppSettingEntity(K_SAMPLES, encodeTemplates(list))); audit("delete_sample", "MessageTemplate", templateId)
+    }
+
+    private fun encodeTemplates(l: List<MessageTemplate>): String = org.json.JSONArray().apply {
+        l.forEach { t -> put(org.json.JSONObject().put("id", t.id).put("type", t.type.name).put("first", t.firstLine)
+            .put("pre", t.amountPrefix).put("suf", t.amountSuffix).put("tokens", org.json.JSONArray(t.tokens.toList()))) }
+    }.toString()
+
+    private fun decodeTemplates(json: String?): List<MessageTemplate> = runCatching {
+        val a = org.json.JSONArray(json ?: return emptyList())
+        (0 until a.length()).mapNotNull { i -> val o = a.getJSONObject(i)
+            val type = runCatching { SampleType.valueOf(o.getString("type")) }.getOrNull() ?: return@mapNotNull null
+            val tk = o.getJSONArray("tokens")
+            MessageTemplate(o.getString("id"), type, (0 until tk.length()).map { tk.getString(it) }.toSet(), o.optString("first"), o.optString("pre"), o.optString("suf"))
+        }
+    }.getOrDefault(emptyList())
+
+    suspend fun reprocessUndecided(all: Boolean = false): Int = ingestMutex.withLock {
         val approved = sms.approved()
         val gate = ConsentGate(approved.map { ApprovedSender(it.senderId, it.bankId, it.approvedAt.toInstant(), it.revokedAt?.toInstant()) })
-        val pipeline = IngestionPipeline(gate, parsers, ledger.accounts().map { it.toDomain() }, zone, clock,
+        val pipeline = IngestionPipeline(gate, registry(), ledger.accounts().map { it.toDomain() }, zone, clock,
             autoConfirmSenders = approved.filter { it.autoConfirm && it.revokedAt == null }.map { it.senderId }.toSet())
         val targets = ledger.events().filter { !it.userDecided && it.state != EventState.IGNORED.name && it.state != EventState.DUPLICATE.name }
         var n = 0
@@ -314,7 +349,7 @@ class BudgetRepository(
                 }
                 // Re-read events under review, and auto-processed events read by an older parser version.
                 val outdated = t.parserId == com.budgetsms.domain.sms.GenericKeywordParser.id && t.parserVersion < com.budgetsms.domain.sms.GenericKeywordParser.version
-                if (t.state != EventState.UNDER_REVIEW.name && !outdated) continue
+                if (t.state != EventState.UNDER_REVIEW.name && !outdated && !all) continue
                 val e = pipeline.toEvent(com.budgetsms.domain.sms.RawSms(raw.fingerprint, raw.sender, raw.receivedAt.toInstant(), raw.body))
                 if (e.id == t.id) { ledger.upsertEvent(e.copy(rawSmsIds = t.toDomain().rawSmsIds).toEntity(false, ms())); n++ }
             }

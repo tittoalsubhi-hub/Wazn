@@ -56,7 +56,7 @@ fun OnboardingScreen(vm: AppViewModel) {
     val cs = MaterialTheme.colorScheme
     Surface(Modifier.fillMaxSize().appBackground(), color = Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground) {
         Column(Modifier.fillMaxSize().systemBarsPadding().imePadding()) {
-            LinearProgressIndicator(progress = { (step + 1) / 5f }, Modifier.fillMaxWidth().padding(16.dp), drawStopIndicator = {})
+            LinearProgressIndicator(progress = { (step + 1) / 6f }, Modifier.fillMaxWidth().padding(16.dp), drawStopIndicator = {})
             AnimatedContent(step, Modifier.weight(1f), label = "step", transitionSpec = {
                 if (motion == AnimationLevel.OFF) fadeIn() togetherWith fadeOut() else (slideInHorizontally { it / 4 } + fadeIn()) togetherWith fadeOut()
             }) { st ->
@@ -96,8 +96,15 @@ fun OnboardingScreen(vm: AppViewModel) {
                             }
                             Text(stringResource(R.string.more_in_settings), style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
                         }
-                        2 -> SmsStep(vm)
-                        3 -> ProfileStep(vm)
+                        2 -> {
+                            // Samples are requested before the SMS permission (owner request v1.6); skippable.
+                            Text(stringResource(R.string.samples_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.samples_body), style = MaterialTheme.typography.bodyMedium)
+                            SampleList(vm)
+                            Text(stringResource(R.string.samples_skip_note), style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
+                        }
+                        3 -> SmsStep(vm)
+                        4 -> ProfileStep(vm)
                         else -> {
                             Spacer(Modifier.height(40.dp))
                             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { AnimatedCheck(size = 120.dp) }
@@ -109,8 +116,12 @@ fun OnboardingScreen(vm: AppViewModel) {
             }
             Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 if (step > 0) TextButton(onClick = { step-- }) { Text(stringResource(R.string.back)) } else Spacer(Modifier.width(1.dp))
-                Button(onClick = { if (step < 4) step++ else vm.completeOnboarding() }, enabled = step != 3 || s.profiles.isNotEmpty()) {
-                    Text(stringResource(if (step < 4) R.string.next else R.string.start))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val templates by vm.templates.collectAsStateWithLifecycle()
+                    if (step == 2 && templates.isEmpty()) OutlinedButton(onClick = { step++ }) { Text(stringResource(R.string.samples_skip)) }
+                    Button(onClick = { if (step < 5) step++ else vm.completeOnboarding() }, enabled = (step != 4 || s.profiles.isNotEmpty()) && (step != 2 || templates.isNotEmpty())) {
+                        Text(stringResource(if (step < 5) R.string.next else R.string.start))
+                    }
                 }
             }
         }

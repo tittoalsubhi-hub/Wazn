@@ -135,7 +135,7 @@ private fun titleFor(route: String): Int = when {
     route == "obligations" -> R.string.obligations; route == "forecast" -> R.string.forecast; route == "reports" -> R.string.reports
     route == "appearance" -> R.string.appearance; route == "security" -> R.string.security; route == "senders" -> R.string.senders
     route == "profiles" -> R.string.profiles_accounts; route == "data" -> R.string.data_backup; route == "language" -> R.string.language
-    route == "audit" -> R.string.audit_log; route == "transfers" -> R.string.transfers
+    route == "audit" -> R.string.audit_log; route == "samples" -> R.string.message_samples; route == "transfers" -> R.string.transfers
     else -> R.string.app_name
 }
 
@@ -165,6 +165,7 @@ private fun AppNavHost(nav: NavHostController, vm: AppViewModel, pref: Appearanc
         composable("language") { LanguageScreen(vm, pref) }
         composable("security") { SecurityScreen(vm, pref) }
         composable("senders") { SendersScreen(vm) }
+        composable("samples") { SamplesScreen(vm) }
         composable("profiles") { ProfilesScreen(vm) }
         composable("data") { DataScreen(vm) }
         composable("audit") { AuditScreen(vm) }

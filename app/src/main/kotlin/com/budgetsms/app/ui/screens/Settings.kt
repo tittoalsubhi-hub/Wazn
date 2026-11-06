@@ -56,6 +56,7 @@ fun MoreScreen(onOpen: (String) -> Unit) {
         Entry("reports", AppIcons.reports, R.string.reports, R.string.reports_sub), Entry("transfers", AppIcons.transfer, R.string.transfers, R.string.transfers_sub),
         Entry("appearance", AppIcons.palette, R.string.appearance, R.string.appearance_sub), Entry("language", AppIcons.language, R.string.language, R.string.language_sub),
         Entry("profiles", AppIcons.profile, R.string.profiles_accounts, R.string.profiles_sub), Entry("senders", AppIcons.senders, R.string.senders, R.string.senders_sub),
+        Entry("samples", AppIcons.sms, R.string.message_samples, R.string.message_samples_sub),
         Entry("security", AppIcons.security, R.string.security, R.string.security_sub), Entry("data", AppIcons.backup, R.string.data_backup, R.string.data_sub),
         Entry("audit", AppIcons.history, R.string.audit_log, R.string.audit_sub),
     )
