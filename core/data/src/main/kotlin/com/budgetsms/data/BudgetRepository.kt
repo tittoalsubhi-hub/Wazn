@@ -123,7 +123,7 @@ class BudgetRepository(
         overrides: List<ObligationOccurrenceEntity>, paymentsE: List<ObligationPaymentMatchEntity>, forecasts: List<ForecastEntity>,
         discovered: List<DiscoveredSenderEntity>, approved: List<ApprovedSenderEntity>, settingsE: List<AppSettingEntity>,
     ): AppSnapshot {
-        val now = clock(); val today = LocalDate.ofInstant(now, zone)
+        val now = clock(); val today = now.atZone(zone).toLocalDate()
         val settingsMap = settingsE.associate { it.key to it.value }
         val accounts = accountsE.map { it.toDomain() }
         val events = eventsE.map { it.toDomain() }

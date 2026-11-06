@@ -57,6 +57,9 @@ android {
         checkDependencies = true
         disable += setOf("GradleDependency", "AndroidGradlePluginVersion", "NewerVersionAvailable", "ObsoleteLintCustomCheck")
         error += "MissingTranslation"
+        textReport = true
+        textOutput = file("stdout")
+        explainIssues = false
     }
 }
 
