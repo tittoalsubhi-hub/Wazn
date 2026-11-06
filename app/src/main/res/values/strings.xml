@@ -383,7 +383,7 @@
     <string name="secure_screen">Hide in recent apps</string>
     <string name="secure_screen_sub">Blocks screenshots and previews</string>
     <string name="encryption_note">Your data is encrypted on this device with a key protected by Android Keystore.</string>
-    <string name="senders_explain">Only messages from senders you approve are read. Import starts from your latest salary message; verification codes are ignored.</string>
+    <string name="senders_explain">Only messages from senders you approve are read. Import starts from your latest salary. Codes, credit-card purchases and general notices are ignored; only card repayments count.</string>
     <string name="discover_senders">Find senders on this phone</string>
     <string name="approved_senders">Approved senders</string>
     <string name="discovered_senders">Discovered senders</string>

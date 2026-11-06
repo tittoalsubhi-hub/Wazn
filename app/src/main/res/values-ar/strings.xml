@@ -383,7 +383,7 @@
     <string name="secure_screen">إخفاء في التطبيقات الأخيرة</string>
     <string name="secure_screen_sub">يمنع لقطات الشاشة والمعاينات</string>
     <string name="encryption_note">بياناتك مشفرة على هذا الجهاز بمفتاح محمي بمخزن مفاتيح أندرويد.</string>
-    <string name="senders_explain">لا تُقرأ إلا رسائل الجهات التي تعتمدها. يبدأ الاستيراد من آخر رسالة راتب، وتُتجاهل رموز التحقق.</string>
+    <string name="senders_explain">لا تُقرأ إلا رسائل الجهات التي تعتمدها. يبدأ الاستيراد من آخر راتب. تُتجاهل الرموز ومشتريات البطاقة الائتمانية والرسائل العامة، ويُحتسب سداد البطاقة فقط.</string>
     <string name="discover_senders">البحث عن الجهات في هذا الجهاز</string>
     <string name="approved_senders">الجهات المعتمدة</string>
     <string name="discovered_senders">الجهات المكتشفة</string>

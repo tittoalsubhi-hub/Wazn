@@ -49,6 +49,8 @@ data class IngestResult(
     val rejected: List<Pair<SmsHeader, String>>,
     /** One-time codes / OTP messages: ignored entirely and never stored. */
     val ignoredOneTimeCodes: Int = 0,
+    /** Messages ignored and never stored, by reason (codes, credit-card movements, general notices). */
+    val ignored: Map<IgnoreReason, Int> = emptyMap(),
 )
 
 /**
@@ -79,13 +81,16 @@ class IngestionPipeline(
         val skipped = mutableListOf<SmsHeader>()
         val rejected = mutableListOf<Pair<SmsHeader, String>>()
         var otp = 0
+        val ignored = mutableMapOf<IgnoreReason, Int>()
         val auto = autoConfirmSenders + state.approvedAutoConfirmSenders
 
         for (msg in batch) {
             val body = consent.readBodyIfApproved(msg.header.sender) { msg.bodySupplier() }
             if (body == null) { skipped += msg.header; continue }
             if (body.length > maxBodyLength) { rejected += msg.header to "body too long"; continue }
-            if (OneTimeCodeFilter.isOneTimeCode(body)) { otp++; continue }
+            val verified = consent.bankFor(msg.header.sender)?.let { parsers.forBank(it).verifiedForBank } == true
+            val ignore = IgnoreFilter.reason(body, checkAmount = !verified)
+            if (ignore != null) { ignored[ignore] = (ignored[ignore] ?: 0) + 1; if (ignore == IgnoreReason.ONE_TIME_CODE) otp++; continue }
             val fp = Fingerprint.of(msg.header.sender, msg.header.receivedAt, body)
             val sourceKey = "$fp|${msg.source}|${msg.sourceRecordId}"
             if (sourceKey !in sourceKeys) {
@@ -113,7 +118,7 @@ class IngestionPipeline(
             events[finalEvent.id] = finalEvent
             newEvents[finalEvent.id] = finalEvent
         }
-        return IngestResult(newRaw, newSources, newEvents.values.toList(), updated.values.toList(), skipped, rejected, otp)
+        return IngestResult(newRaw, newSources, newEvents.values.toList(), updated.values.toList(), skipped, rejected, otp, ignored)
     }
 
     /**
@@ -187,10 +192,30 @@ class IngestionPipeline(
     }
 }
 
+enum class IgnoreReason { ONE_TIME_CODE, CREDIT_CARD_MOVEMENT, INFORMATIONAL }
+
+/**
+ * Owner rules (v1.4): ignore codes, credit-card movements (only card repayments from the bank account count),
+ * and general notices without an amount next to a currency. Ignored messages are never stored.
+ */
+object IgnoreFilter {
+    private val creditCard = listOf("ائتمانية", "ائتماني", "بطاقة ائتمان", "بطاقة الائتمان", "البطاقة الائتمانية", "credit card", "creditcard")
+    private val repayment = listOf("سداد", "تسديد", "repayment", "card payment")
+
+    /** @param checkAmount false for verified bank parsers, which recognise their own amount formats. */
+    fun reason(body: String, checkAmount: Boolean = true): IgnoreReason? {
+        val b = body.lowercase()
+        if (OneTimeCodeFilter.isOneTimeCode(body)) return IgnoreReason.ONE_TIME_CODE
+        if (creditCard.any { b.contains(it) } && repayment.none { b.contains(it) }) return IgnoreReason.CREDIT_CARD_MOVEMENT
+        if (checkAmount && !GenericKeywordParser.hasCurrencyAmount(body)) return IgnoreReason.INFORMATIONAL
+        return null
+    }
+}
+
 /** Recognises verification / one-time-code messages, which are never financial events. */
 object OneTimeCodeFilter {
     private val keywords = listOf(
-        "رمز التحقق", "رمز المرور", "رمز التفعيل", "رمز الدخول", "رمز سري", "الرمز السري", "كلمة المرور لمرة واحدة", "لا تشارك", "لاتشارك",
+        "الرمز", "رمز التحقق", "رمز المرور", "رمز التفعيل", "رمز الدخول", "رمز سري", "الرمز السري", "كلمة المرور لمرة واحدة", "لا تشارك", "لاتشارك",
         "otp", "one-time", "one time password", "verification code", "passcode", "do not share", "activation code",
     )
     fun isOneTimeCode(body: String): Boolean { val b = body.lowercase(); return keywords.any { b.contains(it) } }
@@ -205,7 +230,7 @@ object ImportWindow {
         val approved = batch.filter { consent.isApproved(it.header.sender) }
         val salaryAt = approved.filter { m ->
             val body = m.bodySupplier()
-            !OneTimeCodeFilter.isOneTimeCode(body) &&
+            IgnoreFilter.reason(body) == null &&
                 GenericKeywordParser.parse(RawSms("", m.header.sender, m.header.receivedAt, body), zone).kind == EventKind.SALARY
         }.maxOfOrNull { it.header.receivedAt }
         val from = salaryAt ?: now.minus(Duration.ofDays(fallbackDays))

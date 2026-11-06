@@ -70,4 +70,30 @@ class RiyadBankFormatTest {
         val (fallback, none) = ImportWindow.sinceLastSalary(batch.filter { it.header.receivedAt != t("2026-10-27T08:00") && it.header.receivedAt != t("2026-09-27T08:00") }, gate, RIYADH, t("2026-11-06T12:00"))
         assertNull(none); assertEquals(2, fallback.size) // last 30 days only
     }
+
+    // ---- v1.4 owner rules (samples anonymised) ----
+    private val codePayment = "الرمز:0000\nمدفوعات انترنت\nSAR 240.67\nwww.example.com\n12:53 2026-11-04"
+    private val ccPurchase = "شراء إنترنت دولي\nبطاقة: 1111* ائتمانية;\nمبلغ: SAR 65.99\nسعر الصرف: 1.0\nرسوم + ضريبة القيمة المضافة (15%): 1.52\nإجمالي المبلغ: 67.51\nرصيد: SAR 986.77\nمن: Example Store\nدولة: USA\nفي: 2026-11-03 18:08"
+    private val notice = "عميلنا العزيز،\nيرجى زيارة الموقع الالكتروني للبنك للاطلاع على الدليل الارشادي للتمويل.\nللاستفسارات : 8000000000"
+    private val ccRepayment = "سداد بطاقة ائتمانية\nبطاقة: 1111*\nمبلغ: SAR 500.00\n2026-11-04 10:00"
+
+    @Test fun ownerIgnoreRules() {
+        assertEquals(com.budgetsms.domain.ingest.IgnoreReason.ONE_TIME_CODE, com.budgetsms.domain.ingest.IgnoreFilter.reason(codePayment))
+        assertEquals(com.budgetsms.domain.ingest.IgnoreReason.CREDIT_CARD_MOVEMENT, com.budgetsms.domain.ingest.IgnoreFilter.reason(ccPurchase))
+        assertEquals(com.budgetsms.domain.ingest.IgnoreReason.INFORMATIONAL, com.budgetsms.domain.ingest.IgnoreFilter.reason(notice))
+        assertNull(com.budgetsms.domain.ingest.IgnoreFilter.reason(ccRepayment))
+        assertNull(com.budgetsms.domain.ingest.IgnoreFilter.reason(purchase)); assertNull(com.budgetsms.domain.ingest.IgnoreFilter.reason(bill)); assertNull(com.budgetsms.domain.ingest.IgnoreFilter.reason(salary))
+    }
+
+    @Test fun onlyCardRepaymentCountsAgainstBudget() {
+        val gate = ConsentGate(listOf(ApprovedSender("RIYADBANK", "rb", Instant.EPOCH)))
+        val acc = account("main", "A").copy(bankId = "rb", maskedNumber = "")
+        val pipeline = IngestionPipeline(gate, ParserRegistry(emptyList()), listOf(acc), RIYADH, autoConfirmSenders = setOf("RIYADBANK"))
+        val msgs = listOf(salary, ccPurchase, codePayment, notice, ccRepayment).mapIndexed { i, b -> IncomingSms(SmsHeader("RiyadBank", t("2026-11-0${i + 1}T09:00")), ImportSource.DEVICE_INBOX, "$i") { b } }
+        val r = pipeline.ingest(msgs, IngestState(), "b")
+        assertEquals(listOf(EventKind.SALARY, EventKind.CARD_REPAYMENT), r.newEvents.map { it.kind })
+        assertEquals(3, r.ignored.values.sum())
+        val l = com.budgetsms.domain.accounting.LedgerEngine().compute(com.budgetsms.domain.accounting.LedgerInput(listOf(profile("A")), listOf(acc), events = r.newEvents, now = t("2026-11-06T12:00")))
+        assertEquals(Money.parse("500"), l.budgetOf("A")!!.spent)
+    }
 }

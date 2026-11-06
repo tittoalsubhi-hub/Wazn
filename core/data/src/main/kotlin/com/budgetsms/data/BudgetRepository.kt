@@ -91,6 +91,7 @@ class BudgetRepository(
     /** Name used for the profile created automatically on first sender approval (set by the app, localised). */
     var defaultProfileName: String = "Main"
     private val MIGRATION_AUTO = "migration.autoProcess.v13"
+    private val MIGRATION_IGNORE = "migration.ignoreRules.v14"
     private val K_GRADIENT = "appearance.gradient"
     private val K_BACKGROUND = "appearance.background"
     private val K_GRADIENT_SEED = "appearance.gradientSeed"
@@ -301,16 +302,17 @@ class BudgetRepository(
         val gate = ConsentGate(approved.map { ApprovedSender(it.senderId, it.bankId, it.approvedAt.toInstant(), it.revokedAt?.toInstant()) })
         val pipeline = IngestionPipeline(gate, parsers, ledger.accounts().map { it.toDomain() }, zone, clock,
             autoConfirmSenders = approved.filter { it.autoConfirm && it.revokedAt == null }.map { it.senderId }.toSet())
-        val targets = ledger.events().filter { !it.userDecided && it.state == EventState.UNDER_REVIEW.name }
+        val targets = ledger.events().filter { !it.userDecided && it.state != EventState.IGNORED.name && it.state != EventState.DUPLICATE.name }
         var n = 0
         db.withTransaction {
             val raws = sms.rawByIds(targets.flatMap { it.rawSmsIds.split(',') }).associateBy { it.fingerprint }
             for (t in targets) {
                 val raw = raws[t.rawSmsIds.substringBefore(',')] ?: continue
                 if (!gate.isApproved(raw.sender)) continue
-                if (com.budgetsms.domain.ingest.OneTimeCodeFilter.isOneTimeCode(raw.body)) {
+                if (com.budgetsms.domain.ingest.IgnoreFilter.reason(raw.body) != null) {
                     ledger.upsertEvent(t.copy(state = EventState.IGNORED.name, reviewReasons = "", updatedAt = ms())); n++; continue
                 }
+                if (t.state != EventState.UNDER_REVIEW.name) continue
                 val e = pipeline.toEvent(com.budgetsms.domain.sms.RawSms(raw.fingerprint, raw.sender, raw.receivedAt.toInstant(), raw.body))
                 if (e.id == t.id) { ledger.upsertEvent(e.copy(rawSmsIds = t.toDomain().rawSmsIds).toEntity(false, ms())); n++ }
             }

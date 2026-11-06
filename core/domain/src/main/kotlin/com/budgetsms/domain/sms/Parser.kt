@@ -67,7 +67,8 @@ object GenericKeywordParser : SmsParser {
         EventKind.REFUND to listOf("استرجاع", "مسترد", "refund", "استرداد"),
         EventKind.SALARY to listOf("راتب", "salary", "payroll", "رواتب"),
         EventKind.ALLOWANCE to listOf("بدل", "allowance", "مكافأة", "bonus"),
-        EventKind.CARD_REPAYMENT to listOf("سداد بطاقة", "سداد البطاقة", "card payment", "card repayment", "repayment"),
+        EventKind.CARD_REPAYMENT to listOf("سداد بطاقة", "سداد البطاقة", "سداد مستحقات البطاقة", "سداد مديونية البطاقة", "تسديد بطاقة", "تسديد البطاقة",
+            "credit card payment", "card payment", "card repayment", "repayment"),
         EventKind.PURCHASE_CREDIT_CARD to listOf("بطاقة ائتمان", "بطاقة الائتمان", "ائتمانية", "credit card"),
         EventKind.ATM_WITHDRAWAL to listOf("سحب نقدي", "سحب", "atm", "صراف", "cash withdrawal"),
         EventKind.FEE to listOf("رسوم خدمة", "service fee", "annual fee", "رسوم سنوية"),
@@ -76,6 +77,9 @@ object GenericKeywordParser : SmsParser {
         EventKind.PURCHASE_DEBIT to listOf("شراء", "purchase", "pos", "نقاط البيع", "مدى", "mada", "apple pay",
             "سداد فاتورة", "سداد الفواتير", "سداد", "دفع فاتورة", "مدفوعات", "bill payment", "payment"),
     )
+
+    /** True when the text contains an amount written next to a currency code (e.g. "SAR 240.67"). */
+    fun hasCurrencyAmount(text: String): Boolean = amountRe.containsMatchIn(text)
 
     override fun parse(sms: RawSms, zone: ZoneId): ParsedSms {
         val text = sms.body

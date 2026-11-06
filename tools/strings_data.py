@@ -382,7 +382,7 @@ use_biometric|Use fingerprint or face|استخدم البصمة أو الوجه
 secure_screen|Hide in recent apps|إخفاء في التطبيقات الأخيرة
 secure_screen_sub|Blocks screenshots and previews|يمنع لقطات الشاشة والمعاينات
 encryption_note|Your data is encrypted on this device with a key protected by Android Keystore.|بياناتك مشفرة على هذا الجهاز بمفتاح محمي بمخزن مفاتيح أندرويد.
-senders_explain|Only messages from senders you approve are read. Import starts from your latest salary message; verification codes are ignored.|لا تُقرأ إلا رسائل الجهات التي تعتمدها. يبدأ الاستيراد من آخر رسالة راتب، وتُتجاهل رموز التحقق.
+senders_explain|Only messages from senders you approve are read. Import starts from your latest salary. Codes, credit-card purchases and general notices are ignored; only card repayments count.|لا تُقرأ إلا رسائل الجهات التي تعتمدها. يبدأ الاستيراد من آخر راتب. تُتجاهل الرموز ومشتريات البطاقة الائتمانية والرسائل العامة، ويُحتسب سداد البطاقة فقط.
 discover_senders|Find senders on this phone|البحث عن الجهات في هذا الجهاز
 approved_senders|Approved senders|الجهات المعتمدة
 discovered_senders|Discovered senders|الجهات المكتشفة
