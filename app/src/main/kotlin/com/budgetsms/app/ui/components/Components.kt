@@ -263,8 +263,9 @@ fun ExactValues(rows: List<Pair<String, Money>>) {
 fun <T> ChoiceRow(options: List<T>, selected: T?, label: @Composable (T) -> String, onSelect: (T) -> Unit, icon: ((T) -> ImageVector?)? = null) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         options.forEach { o ->
+            val ic = icon?.invoke(o)
             FilterChip(selected = o == selected, onClick = { onSelect(o) }, label = { Text(label(o), maxLines = 1) },
-                leadingIcon = icon?.invoke(o)?.let { ic -> { Icon(ic, null, Modifier.size(18.dp)) } })
+                leadingIcon = if (ic != null) { { Icon(ic, null, Modifier.size(18.dp)) } } else null)
         }
     }
 }
