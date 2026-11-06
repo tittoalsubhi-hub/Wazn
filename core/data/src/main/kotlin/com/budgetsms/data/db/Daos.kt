@@ -22,6 +22,8 @@ interface SmsDao {
     @Upsert suspend fun upsertDiscovered(items: List<DiscoveredSenderEntity>)
     @Query("SELECT * FROM approved_sender") fun observeApproved(): Flow<List<ApprovedSenderEntity>>
     @Query("SELECT * FROM approved_sender") suspend fun approved(): List<ApprovedSenderEntity>
+    @Query("DELETE FROM raw_sms WHERE fingerprint IN (:ids)") suspend fun deleteRaw(ids: List<String>)
+    @Query("DELETE FROM sms_source WHERE fingerprint IN (:ids)") suspend fun deleteSources(ids: List<String>)
     @Upsert suspend fun upsertApproved(item: ApprovedSenderEntity)
 }
 
@@ -33,6 +35,14 @@ interface LedgerDao {
     @Query("SELECT * FROM profile ORDER BY createdAt") suspend fun profiles(): List<ProfileEntity>
     @Query("SELECT * FROM profile ORDER BY createdAt") fun observeProfiles(): Flow<List<ProfileEntity>>
     @Upsert suspend fun upsertProfile(p: ProfileEntity)
+    @Query("DELETE FROM profile WHERE id = :id") suspend fun deleteProfile(id: String)
+    @Query("DELETE FROM account WHERE id = :id") suspend fun deleteAccount(id: String)
+    @Query("DELETE FROM account_assignment WHERE accountId = :accountId OR profileId = :profileId") suspend fun deleteAssignments(accountId: String, profileId: String)
+    @Query("SELECT * FROM bank_event WHERE accountId = :accountId") suspend fun eventsOfAccount(accountId: String): List<BankEventEntity>
+    @Query("DELETE FROM bank_event WHERE accountId = :accountId") suspend fun deleteEventsOfAccount(accountId: String)
+    @Query("DELETE FROM category_limit WHERE profileId = :profileId") suspend fun deleteLimitsOf(profileId: String)
+    @Query("DELETE FROM financial_cycle WHERE profileId = :profileId") suspend fun deleteCyclesOf(profileId: String)
+    @Query("DELETE FROM budget_allocation WHERE fromProfileId = :profileId OR toProfileId = :profileId") suspend fun deleteAllocationsOf(profileId: String)
     @Query("SELECT * FROM account ORDER BY displayName") fun observeAccounts(): Flow<List<AccountEntity>>
     @Query("SELECT * FROM account") suspend fun accounts(): List<AccountEntity>
     @Upsert suspend fun upsertAccount(a: AccountEntity)
@@ -70,6 +80,12 @@ interface LedgerDao {
 interface PlanDao {
     @Query("SELECT * FROM savings_goal ORDER BY createdAt") fun observeGoals(): Flow<List<SavingsGoalEntity>>
     @Upsert suspend fun upsertGoal(g: SavingsGoalEntity)
+    @Query("DELETE FROM savings_installment WHERE goalId IN (SELECT id FROM savings_goal WHERE profileId = :profileId)") suspend fun deleteInstallmentsOf(profileId: String)
+    @Query("DELETE FROM savings_goal WHERE profileId = :profileId") suspend fun deleteGoalsOf(profileId: String)
+    @Query("DELETE FROM obligation_payment_match WHERE substr(occurrenceId, 1, instr(occurrenceId, '#') - 1) IN (SELECT id FROM recurring_obligation WHERE profileId = :profileId)") suspend fun deletePaymentsOf(profileId: String)
+    @Query("DELETE FROM obligation_occurrence WHERE obligationId IN (SELECT id FROM recurring_obligation WHERE profileId = :profileId)") suspend fun deleteOverridesOf(profileId: String)
+    @Query("DELETE FROM recurring_obligation WHERE profileId = :profileId") suspend fun deleteObligationsOf(profileId: String)
+    @Query("DELETE FROM forecast WHERE profileId = :profileId") suspend fun deleteForecastsOf(profileId: String)
     @Query("SELECT * FROM savings_goal WHERE id = :id") suspend fun goal(id: String): SavingsGoalEntity?
     @Query("SELECT * FROM savings_installment") fun observeInstallments(): Flow<List<SavingsInstallmentEntity>>
     @Upsert suspend fun upsertInstallment(i: SavingsInstallmentEntity)

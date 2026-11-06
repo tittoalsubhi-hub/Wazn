@@ -512,3 +512,38 @@ date_order_mdy|Month/Day/Year|شهر/يوم/سنة
 sample_date_is|Date: %1$s|التاريخ: %1$s
 sample_date_not_found|No date found in this message|لم يُعثر على تاريخ في الرسالة
 """
+S += r"""
+new_profile_short|Profile|ملف
+wizard_profile_body|A new profile has its own bank, cycles and budget — for example a family member or a second salary.|الملف الجديد له بنكه ودوراته وميزانيته — مثل أحد أفراد العائلة أو راتب ثانٍ.
+wizard_bank_title|Choose this profile's bank messages|اختر رسائل بنك هذا الملف
+wizard_bank_body|Pick the SMS sender of the bank for this profile. All of its messages will be booked to this profile.|اختر جهة رسائل البنك لهذا الملف. ستُسجَّل كل رسائلها على هذا الملف.
+wizard_sender_note|Senders already used by another profile are not listed. Next you can add message samples for this bank.|الجهات المستخدمة في ملف آخر لا تظهر هنا. في الخطوة التالية يمكنك إضافة نماذج رسائل هذا البنك.
+delete_profile|Delete profile|حذف الملف
+delete_profile_x|Delete %1$s?|حذف %1$s؟
+delete_profile_body|This permanently removes the profile, its %1$d bank account(s) with their messages and transactions, limits, goals, obligations and plans. The bank sender is revoked. This cannot be undone.|سيُحذف الملف نهائياً مع حساباته البنكية (%1$d) ورسائلها وعملياتها، والحدود والأهداف والالتزامات والخطط، ويُلغى اعتماد جهة البنك. لا يمكن التراجع.
+type_name_to_confirm|Type the profile name to confirm|اكتب اسم الملف للتأكيد
+delete|Delete|حذف
+msg_profile_added|Profile added; importing its messages|تمت إضافة الملف وجارٍ استيراد رسائله
+msg_profile_deleted|Profile deleted|تم حذف الملف
+tour_guide|Tour guide|جولة تعريفية
+tour_guide_sub|A quick walk through the app|شرح سريع لأقسام التطبيق
+tour_done|Done|تم
+tour_home_t|Home|الرئيسية
+tour_home_b|Your remaining budget, spending by category, balances and alerts. Switch profiles at the top, or add a new profile with its own bank.|المتبقي من ميزانيتك والمصروف حسب الفئة والأرصدة والتنبيهات. بدّل الملفات من الأعلى أو أضف ملفاً جديداً ببنكه الخاص.
+tour_activity_t|Activity|العمليات
+tour_activity_b|Every transaction read from your bank messages. Items "to review" let you check the original message and fix the type or amount.|كل العمليات المقروءة من رسائل بنكك. العمليات «للمراجعة» تعرض الرسالة الأصلية وتتيح تعديل النوع أو المبلغ.
+tour_budget_t|Budget|الميزانية
+tour_budget_b|The current cycle starts with your salary. Set limits per category as an amount or a percentage of the salary.|تبدأ الدورة الحالية مع راتبك. ضع حداً لكل فئة بمبلغ أو نسبة من الراتب.
+tour_goals_t|Savings|الادخار
+tour_goals_b|When a salary cycle closes with a surplus, turn it into a savings goal and track transfers to your savings account.|عند انتهاء دورة الراتب بفائض حوّله إلى هدف ادخار وتابع تحويلاتك لحساب الادخار.
+tour_obligations_t|Obligations & forecast|الالتزامات والتوقعات
+tour_obligations_b|Add rent, installments and subscriptions. The forecast shows what is left after them and suggests how much to save.|أضف الإيجار والأقساط والاشتراكات. تعرض التوقعات المتبقي بعدها وتقترح مقدار الادخار.
+tour_samples_t|Message samples|نماذج الرسائل
+tour_samples_b|If a bank's messages are not read correctly, paste one sample of each type in More › Message samples and choose the date format.|إذا لم تُقرأ رسائل بنك بشكل صحيح، الصق نموذجاً لكل نوع من المزيد › نماذج الرسائل واختر صيغة التاريخ.
+tour_profiles_t|Profiles|الملفات
+tour_profiles_b|Each profile has its own bank and budget. Manage or delete profiles in More › Profiles & accounts.|لكل ملف بنكه وميزانيته. أدر الملفات أو احذفها من المزيد › الملفات والحسابات.
+tour_appearance_t|Make it yours|اجعله على ذوقك
+tour_appearance_b|Choose colors, dark or light mode, gradients, background and motion in More › Appearance.|اختر الألوان والوضع الداكن أو الفاتح والتدرجات والخلفية والحركة من المزيد › المظهر.
+tour_security_t|Private and secure|خاص وآمن
+tour_security_b|Data is encrypted and stays on your phone. Add a PIN or fingerprint lock and hide amounts in Security.|بياناتك مشفرة وتبقى على جهازك. أضف قفلاً برمز أو بصمة وأخفِ المبالغ من الأمان.
+"""

@@ -245,16 +245,38 @@ class BudgetRepository(
     suspend fun addBank(name: String, color: Long): String { val b = BankEntity(id(), name.trim(), color); ledger.upsertBank(b); audit("create", "bank", b.id, name); return b.id }
 
     /** Approval permits historical and future processing; it never creates a bank event by itself. */
-    suspend fun approveSender(senderId: String, bankId: String) = db.withTransaction {
+    suspend fun approveSender(senderId: String, bankId: String, profileId: String? = null) = db.withTransaction {
         val id = SenderNormalizer.normalize(senderId)
         sms.upsertApproved(ApprovedSenderEntity(id, bankId, ms(), null, autoConfirm = true)); audit("approve", "sender", id, bankId)
-        ensureBankAccount(bankId)
+        ensureBankAccount(bankId, profileId)
+    }
+
+    /**
+     * Deletes a profile with everything that belongs only to it: its bank-level accounts and their messages and
+     * transactions, limits, cycles, goals, obligations and plans. Senders of banks left without accounts are revoked.
+     */
+    suspend fun deleteProfile(profileId: String) = db.withTransaction {
+        val accounts = ledger.accounts().filter { it.profileId == profileId }
+        for (a in accounts) {
+            val raws = ledger.eventsOfAccount(a.id).flatMap { it.rawSmsIds.split(',') }.filter { it.isNotBlank() }
+            ledger.deleteEventsOfAccount(a.id); sms.deleteSources(raws); sms.deleteRaw(raws)
+            ledger.deleteAssignments(a.id, profileId); ledger.deleteAccount(a.id)
+        }
+        val remaining = ledger.accounts()
+        accounts.map { it.bankId }.distinct().filter { b -> remaining.none { it.bankId == b } }.forEach { b ->
+            sms.approved().filter { it.bankId == b && it.revokedAt == null }.forEach { sms.upsertApproved(it.copy(revokedAt = ms())) }
+        }
+        ledger.deleteLimitsOf(profileId); ledger.deleteCyclesOf(profileId); ledger.deleteAllocationsOf(profileId)
+        plan.deleteInstallmentsOf(profileId); plan.deleteGoalsOf(profileId); plan.deletePaymentsOf(profileId)
+        plan.deleteOverridesOf(profileId); plan.deleteObligationsOf(profileId); plan.deleteForecastsOf(profileId)
+        ledger.deleteProfile(profileId)
+        audit("delete", "profile", profileId, "accounts=${accounts.size}")
     }
 
     /** Every message of an approved bank is booked to one bank-level account; created once, with a default profile if needed. */
-    private suspend fun ensureBankAccount(bankId: String) {
+    private suspend fun ensureBankAccount(bankId: String, forProfile: String? = null) {
         if (ledger.accounts().any { it.bankId == bankId && it.type != AccountType.CREDIT_CARD.name }) return
-        var profileId = ledger.profiles().firstOrNull()?.id
+        var profileId = forProfile ?: ledger.profiles().firstOrNull()?.id
         if (profileId == null) {
             profileId = id()
             ledger.upsertProfile(ProfileEntity(profileId, defaultProfileName, CycleType.SALARY.name, RenewalMode.MANUAL.name, null, 30, "NONE", 0, null, 0xFF1B6B2A, "person", ms()))

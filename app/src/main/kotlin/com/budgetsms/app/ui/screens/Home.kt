@@ -64,8 +64,16 @@ fun HomeScreen(vm: AppViewModel, onOpen: (String) -> Unit) {
     val sem = LocalSemantic.current
     val locale = currentLocale()
     val view = s.budgetView(sel)
+    var wizard by remember { mutableStateOf(false) }
+    if (wizard) AddProfileWizard(vm) { wizard = false }
     ScreenColumn {
-        ProfileSelector(vm)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f)) { ProfileSelector(vm) }
+            Spacer(Modifier.width(8.dp))
+            FilledTonalButton(onClick = { wizard = true }, contentPadding = PaddingValues(horizontal = 12.dp)) {
+                Icon(AppIcons.addProfile, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.new_profile_short))
+            }
+        }
         if (view == null) {
             SectionCard(null) {
                 EmptyState(AppIcons.sms, stringResource(R.string.no_cycle_title), stringResource(R.string.no_cycle_body)) {

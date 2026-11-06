@@ -59,6 +59,7 @@ fun MoreScreen(onOpen: (String) -> Unit) {
         Entry("samples", AppIcons.sms, R.string.message_samples, R.string.message_samples_sub),
         Entry("security", AppIcons.security, R.string.security, R.string.security_sub), Entry("data", AppIcons.backup, R.string.data_backup, R.string.data_sub),
         Entry("audit", AppIcons.history, R.string.audit_log, R.string.audit_sub),
+        Entry("tour", AppIcons.tour, R.string.tour_guide, R.string.tour_guide_sub),
     )
     ScreenColumn {
         SectionCard(null) { entries.forEach { e -> SettingRow(e.icon, stringResource(e.title), stringResource(e.sub), onClick = { onOpen(e.route) }) } }
@@ -321,9 +322,14 @@ fun ProfilesScreen(vm: AppViewModel) {
     var newProfile by remember { mutableStateOf(false) }
     var newAccount by remember { mutableStateOf(false) }
     var reassign by remember { mutableStateOf<Account?>(null) }
+    var wizard by remember { mutableStateOf(false) }
+    var deleting by remember { mutableStateOf<Profile?>(null) }
+    if (wizard) AddProfileWizard(vm) { wizard = false }
+    deleting?.let { p -> DeleteProfileDialog(vm, p) { deleting = null } }
     ScreenColumn {
-        SectionCard(stringResource(R.string.profiles), icon = AppIcons.profile, action = { TextButton(onClick = { newProfile = true }) { Icon(AppIcons.add, null); Text(stringResource(R.string.add)) } }) {
-            s.profiles.forEach { p -> SettingRow(AppIcons.profile, p.profile.name, cycleTypeLabel(p.profile.cycleType), onClick = { editProfile = p.profile }) }
+        SectionCard(stringResource(R.string.profiles), icon = AppIcons.profile, action = { TextButton(onClick = { wizard = true }) { Icon(AppIcons.add, null); Text(stringResource(R.string.add)) } }) {
+            s.profiles.forEach { p -> SettingRow(AppIcons.profile, p.profile.name, cycleTypeLabel(p.profile.cycleType), onClick = { editProfile = p.profile },
+                trailing = { IconButton(onClick = { deleting = p.profile }) { Icon(AppIcons.delete, stringResource(R.string.delete_profile), tint = MaterialTheme.colorScheme.error) } }) }
             if (s.profiles.isEmpty()) Text(stringResource(R.string.no_profiles_body))
         }
         SectionCard(stringResource(R.string.accounts), icon = AppIcons.bank, action = { TextButton(onClick = { newAccount = true }, enabled = s.profiles.isNotEmpty() && s.banks.isNotEmpty()) { Icon(AppIcons.add, null); Text(stringResource(R.string.add)) } }) {
@@ -475,4 +481,22 @@ fun ReportsScreen(vm: AppViewModel) {
             }
         }
     }
+}
+
+/** Confirms deleting a profile and lists what will be removed. */
+@Composable
+fun DeleteProfileDialog(vm: AppViewModel, p: Profile, onDone: () -> Unit) {
+    val s by vm.snapshot.collectAsStateWithLifecycle()
+    val accounts = s.accounts.filter { it.profileId == p.id }
+    var typed by remember { mutableStateOf("") }
+    AlertDialog(onDismissRequest = onDone, icon = { Icon(AppIcons.delete, null, tint = MaterialTheme.colorScheme.error) },
+        title = { Text(stringResource(R.string.delete_profile_x, p.name)) },
+        text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.delete_profile_body, accounts.size))
+            accounts.forEach { Text("• " + it.displayName, style = MaterialTheme.typography.bodySmall) }
+            OutlinedTextField(typed, { typed = it }, label = { Text(stringResource(R.string.type_name_to_confirm)) }, singleLine = true)
+        } },
+        confirmButton = { TextButton(enabled = typed.trim() == p.name.trim(), onClick = { vm.deleteProfile(p.id); onDone() },
+            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.delete)) } },
+        dismissButton = { TextButton(onClick = onDone) { Text(stringResource(R.string.cancel)) } })
 }

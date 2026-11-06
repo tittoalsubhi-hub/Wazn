@@ -131,6 +131,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         syncDeviceInternal()
     }
     fun revokeSender(senderId: String) = act(R.string.msg_sender_revoked) { repo.revokeSender(senderId) }
+
+    /** New profile linked to a newly approved bank sender; its messages are imported into this profile only. */
+    fun addProfileWithBank(name: String, type: CycleType, senderId: String, bankName: String) = act(R.string.msg_profile_added) {
+        val pid = repo.saveProfile(Profile(newProfileId(), name, type), BANK_COLORS[(name.hashCode() and 0x7fffffff) % BANK_COLORS.size], "person")
+        val bid = repo.addBank(bankName.ifBlank { senderId }, BANK_COLORS[(senderId.hashCode() and 0x7fffffff) % BANK_COLORS.size])
+        repo.approveSender(senderId, bid, pid)
+        selectedProfile.value = pid
+        syncDeviceInternal()
+    }
+    fun deleteProfile(profileId: String) = act(R.string.msg_profile_deleted) {
+        if (selectedProfile.value == profileId) selectedProfile.value = null
+        repo.deleteProfile(profileId)
+    }
     fun setAutoConfirm(senderId: String, on: Boolean) = act(R.string.msg_saved) { repo.setAutoConfirm(senderId, on) }
 
     fun syncDevice() = act { syncDeviceInternal() }

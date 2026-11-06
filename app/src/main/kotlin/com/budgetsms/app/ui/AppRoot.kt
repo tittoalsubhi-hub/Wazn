@@ -74,6 +74,7 @@ private fun MainScaffold(vm: AppViewModel, pref: AppearancePreference) {
     LaunchedEffect(Unit) { vm.messages.collect { m -> snackbar.showSnackbar(if (m.arg != null) ctx.getString(m.res, m.arg) else ctx.getString(m.res)) } }
     val wide = LocalConfiguration.current.screenWidthDp >= 600
     val isTab = Tab.entries.any { it.route == route }
+    val currentTab = tabFor(route)
     val alertCount = snapshot.ledger?.alerts?.size ?: 0
     val reviewCount = snapshot.ledger?.reviews?.map { it.eventId }?.distinct()?.size ?: 0
 
@@ -82,8 +83,8 @@ private fun MainScaffold(vm: AppViewModel, pref: AppearancePreference) {
         if (wide) NavigationRail(Modifier.fillMaxHeight(), containerColor = if (translucent) Color.Transparent else MaterialTheme.colorScheme.surface, contentColor = MaterialTheme.colorScheme.onSurface) {
             Spacer(Modifier.height(24.dp))
             Tab.entries.forEach { t ->
-                NavigationRailItem(selected = route == t.route, onClick = { nav.goTab(t) },
-                    icon = { BadgedIcon(t, route == t.route, if (t == Tab.ACTIVITY) reviewCount else 0) }, label = { Text(stringResource(t.label)) })
+                NavigationRailItem(selected = currentTab == t, onClick = { nav.goTab(t) },
+                    icon = { BadgedIcon(t, currentTab == t, if (t == Tab.ACTIVITY) reviewCount else 0) }, label = { Text(stringResource(t.label)) })
             }
         }
         Scaffold(
@@ -105,8 +106,8 @@ private fun MainScaffold(vm: AppViewModel, pref: AppearancePreference) {
             bottomBar = {
                 if (!wide) NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = if (translucent) 0.86f else 1f)) {
                     Tab.entries.forEach { t ->
-                        NavigationBarItem(selected = route == t.route, onClick = { nav.goTab(t) },
-                            icon = { BadgedIcon(t, route == t.route, if (t == Tab.ACTIVITY) reviewCount else 0) },
+                        NavigationBarItem(selected = currentTab == t, onClick = { nav.goTab(t) },
+                            icon = { BadgedIcon(t, currentTab == t, if (t == Tab.ACTIVITY) reviewCount else 0) },
                             label = { Text(stringResource(t.label), maxLines = 1) })
                     }
                 }
@@ -125,8 +126,18 @@ private fun BadgedIcon(t: Tab, selected: Boolean, badge: Int) {
     BadgedBox(badge = { if (badge > 0) Badge { Text(badge.toString()) } }) { AnimatedNavIcon(selected, t.icons, null) }
 }
 
+/** Tapping a tab always opens that tab's main page (e.g. More → More, even from Obligations or Forecast). */
 private fun NavHostController.goTab(t: Tab) = navigate(t.route) {
-    popUpTo(graph.startDestinationId) { saveState = true }; launchSingleTop = true; restoreState = true
+    popUpTo(graph.startDestinationId) { saveState = false }; launchSingleTop = true; restoreState = false
+}
+
+/** Which tab a screen belongs to, so the bar highlights it on sub-screens too. */
+private fun tabFor(route: String): Tab = when {
+    route == "home" -> Tab.HOME
+    route == "activity" || route.startsWith("event") -> Tab.ACTIVITY
+    route == "budget" -> Tab.BUDGET
+    route == "goals" -> Tab.GOALS
+    else -> Tab.MORE
 }
 
 private fun titleFor(route: String): Int = when {
@@ -135,7 +146,7 @@ private fun titleFor(route: String): Int = when {
     route == "obligations" -> R.string.obligations; route == "forecast" -> R.string.forecast; route == "reports" -> R.string.reports
     route == "appearance" -> R.string.appearance; route == "security" -> R.string.security; route == "senders" -> R.string.senders
     route == "profiles" -> R.string.profiles_accounts; route == "data" -> R.string.data_backup; route == "language" -> R.string.language
-    route == "audit" -> R.string.audit_log; route == "samples" -> R.string.message_samples; route == "transfers" -> R.string.transfers
+    route == "audit" -> R.string.audit_log; route == "samples" -> R.string.message_samples; route == "tour" -> R.string.tour_guide; route == "transfers" -> R.string.transfers
     else -> R.string.app_name
 }
 
@@ -166,6 +177,7 @@ private fun AppNavHost(nav: NavHostController, vm: AppViewModel, pref: Appearanc
         composable("security") { SecurityScreen(vm, pref) }
         composable("senders") { SendersScreen(vm) }
         composable("samples") { SamplesScreen(vm) }
+        composable("tour") { TourScreen(onFinish = { nav.popBackStack() }) }
         composable("profiles") { ProfilesScreen(vm) }
         composable("data") { DataScreen(vm) }
         composable("audit") { AuditScreen(vm) }

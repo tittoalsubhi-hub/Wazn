@@ -77,6 +77,7 @@ object AppIcons {
     val darkMode = Icons.Rounded.DarkMode; val lightMode = Icons.Rounded.LightMode; val auto = Icons.Rounded.BrightnessAuto
     val motion = Icons.Rounded.Animation; val contrast = Icons.Rounded.Contrast; val corners = Icons.Rounded.RoundedCorner
     val wallpaper = Icons.Rounded.Wallpaper; val sms = Icons.Rounded.Sms; val history = Icons.Rounded.History
+    val delete = Icons.Rounded.DeleteOutline; val tour = Icons.Rounded.Explore; val addProfile = Icons.Rounded.PersonAdd
     val chevron = Icons.AutoMirrored.Rounded.KeyboardArrowRight; val back = Icons.AutoMirrored.Rounded.ArrowBack
 }
 
