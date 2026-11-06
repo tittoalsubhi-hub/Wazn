@@ -79,7 +79,7 @@ private fun MainScaffold(vm: AppViewModel, pref: AppearancePreference) {
 
     val translucent = com.budgetsms.app.ui.theme.LocalGradients.current.background != com.budgetsms.domain.appearance.BackgroundStyle.PLAIN
     Row(Modifier.fillMaxSize().appBackground()) {
-        if (wide) NavigationRail(Modifier.fillMaxHeight(), containerColor = if (translucent) Color.Transparent else MaterialTheme.colorScheme.surface) {
+        if (wide) NavigationRail(Modifier.fillMaxHeight(), containerColor = if (translucent) Color.Transparent else MaterialTheme.colorScheme.surface, contentColor = MaterialTheme.colorScheme.onSurface) {
             Spacer(Modifier.height(24.dp))
             Tab.entries.forEach { t ->
                 NavigationRailItem(selected = route == t.route, onClick = { nav.goTab(t) },
@@ -89,6 +89,7 @@ private fun MainScaffold(vm: AppViewModel, pref: AppearancePreference) {
         Scaffold(
             modifier = Modifier.weight(1f),
             containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onBackground,
             snackbarHost = { SnackbarHost(snackbar) },
             topBar = {
                 TopAppBar(
@@ -202,7 +203,7 @@ fun LockScreen(vm: AppViewModel) {
             .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK).build())
     }
     LaunchedEffect(bio) { if (bio) prompt() }
-    Surface(Modifier.fillMaxSize().appBackground(), color = Color.Transparent) {
+    Surface(Modifier.fillMaxSize().appBackground(), color = Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground) {
         Column(Modifier.fillMaxSize().padding(32.dp).imePadding(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(AppIcons.lock, null, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.height(16.dp))

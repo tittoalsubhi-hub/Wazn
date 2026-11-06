@@ -47,6 +47,7 @@ import com.budgetsms.app.ui.theme.iconFill
 import com.budgetsms.app.ui.icons.RiyalSymbol
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.isSpecified
+import androidx.compose.ui.graphics.takeOrElse
 import com.budgetsms.domain.appearance.AnimationLevel
 import com.budgetsms.domain.model.Provenance
 import com.budgetsms.domain.money.Money
@@ -138,7 +139,7 @@ fun SectionCard(title: String?, modifier: Modifier = Modifier, icon: ImageVector
                 container: Color = MaterialTheme.colorScheme.surfaceContainerLow, content: @Composable ColumnScope.() -> Unit) {
     val brush = cardBrush(container)
     Card(modifier.fillMaxWidth().animateContentSize(), shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = if (brush != null) Color.Transparent else container)) {
+        colors = CardDefaults.cardColors(containerColor = if (brush != null) Color.Transparent else container, contentColor = contentColorFor(container).takeOrElse { MaterialTheme.colorScheme.onSurface })) {
         Column((if (brush != null) Modifier.background(brush) else Modifier).padding(16.dp)) {
             if (title != null) Row(verticalAlignment = Alignment.CenterVertically) {
                 if (icon != null) { IconBadge(icon, MaterialTheme.colorScheme.primary); Spacer(Modifier.width(10.dp)) }
@@ -163,7 +164,7 @@ fun IconBadge(icon: ImageVector, color: Color, size: Int = 36) {
 fun StatTile(label: String, value: Money?, provenance: Provenance, icon: ImageVector, color: Color, modifier: Modifier = Modifier) {
     val base = MaterialTheme.colorScheme.surfaceContainer
     val brush = cardBrush(base)
-    Surface(modifier, shape = MaterialTheme.shapes.medium, color = if (brush != null) Color.Transparent else base) {
+    Surface(modifier, shape = MaterialTheme.shapes.medium, color = if (brush != null) Color.Transparent else base, contentColor = MaterialTheme.colorScheme.onSurface) {
         Column((if (brush != null) Modifier.background(brush) else Modifier).padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, null, Modifier.size(18.dp), tint = color); Spacer(Modifier.width(6.dp))

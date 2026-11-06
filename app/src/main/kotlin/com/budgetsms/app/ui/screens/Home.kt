@@ -181,7 +181,7 @@ private fun HeroCard(v: BudgetView) {
     val cs = MaterialTheme.colorScheme
     val frac = if (v.funded.halalas <= 0) 0f else (v.spent.halalas.toFloat() / v.funded.halalas)
     val (heroBrush, onHero) = com.budgetsms.app.ui.theme.heroFill()
-    Card(shape = MaterialTheme.shapes.extraLarge, colors = CardDefaults.cardColors(containerColor = Color.Transparent)) {
+    Card(shape = MaterialTheme.shapes.extraLarge, colors = CardDefaults.cardColors(containerColor = Color.Transparent, contentColor = onHero)) {
         Box(Modifier.background(heroBrush).padding(20.dp)) {
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {

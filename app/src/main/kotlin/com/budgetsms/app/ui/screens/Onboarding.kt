@@ -54,7 +54,7 @@ fun OnboardingScreen(vm: AppViewModel) {
     val s by vm.snapshot.collectAsStateWithLifecycle()
     val motion = LocalMotion.current
     val cs = MaterialTheme.colorScheme
-    Surface(Modifier.fillMaxSize().appBackground(), color = Color.Transparent) {
+    Surface(Modifier.fillMaxSize().appBackground(), color = Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground) {
         Column(Modifier.fillMaxSize().systemBarsPadding().imePadding()) {
             LinearProgressIndicator(progress = { (step + 1) / 5f }, Modifier.fillMaxWidth().padding(16.dp), drawStopIndicator = {})
             AnimatedContent(step, Modifier.weight(1f), label = "step", transitionSpec = {
