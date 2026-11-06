@@ -209,7 +209,8 @@ fun TrendChart(points: List<ChartPoint>, reference: Money?, color: Color, modifi
     LaunchedEffect(points.size, motion) { if (motion != AnimationLevel.OFF) reveal.animateTo(1f, tween(if (motion == AnimationLevel.FULL) 900 else 300)) }
     val grid = MaterialTheme.colorScheme.outlineVariant; val refColor = LocalSemantic.current.planned
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    val desc = points.joinToString { "${it.label}: ${money(it.value)}" }
+    val loc = currentLocale(); val masked = LocalMaskAmounts.current
+    val desc = points.joinToString { "${it.label}: ${Fmt.money(it.value, loc, masked)}" }
     val max = maxOf(points.maxOf { it.value.halalas }, reference?.halalas ?: 0L, 1L).toFloat()
     Canvas(modifier.fillMaxWidth().height(150.dp).semantics { contentDescription = desc }) {
         val w = size.width; val h = size.height
@@ -235,7 +236,8 @@ fun DonutChart(slices: List<Slice>, modifier: Modifier = Modifier, center: @Comp
     val motion = LocalMotion.current
     val sweep by animateFloatAsState(1f, if (motion == AnimationLevel.OFF) snap() else tween(900), label = "donut")
     val track = MaterialTheme.colorScheme.surfaceContainerHighest
-    val desc = slices.joinToString { "${it.label}: ${money(it.value)}" }
+    val loc = currentLocale(); val masked = LocalMaskAmounts.current
+    val desc = slices.joinToString { "${it.label}: ${Fmt.money(it.value, loc, masked)}" }
     Box(modifier.size(170.dp).semantics { contentDescription = desc }, contentAlignment = Alignment.Center) {
         Canvas(Modifier.matchParentSize()) {
             val s = 26.dp.toPx(); val arc = Size(size.width - s, size.height - s); val tl = Offset(s / 2, s / 2)
