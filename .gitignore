@@ -1,0 +1,17 @@
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+# Never commit keys, signing material, environment files or personal data
+*.jks
+*.keystore
+signing.properties
+.env
+*.env
+*.bsms
+sms-backup*.xml
