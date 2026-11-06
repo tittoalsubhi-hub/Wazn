@@ -23,6 +23,11 @@ import com.budgetsms.domain.model.EventKind
 import com.budgetsms.domain.money.Money
 import com.budgetsms.domain.sms.SampleType
 import com.budgetsms.domain.sms.TemplateLearner
+import com.budgetsms.domain.sms.DateOrder
+import com.budgetsms.domain.sms.DateParsing
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import java.time.ZoneId
 
 @Composable
@@ -67,29 +72,51 @@ fun SampleList(vm: AppViewModel) {
             }
         }
     }
-    editing?.let { type -> SampleDialog(type, onDismiss = { editing = null }) { text, amount -> vm.saveSample(type, text, amount); editing = null } }
+    editing?.let { type -> SampleDialog(type, onDismiss = { editing = null }) { text, amount, order -> vm.saveSample(type, text, amount, order); editing = null } }
 }
 
 @Composable
-private fun SampleDialog(type: SampleType, onDismiss: () -> Unit, onSave: (String, Money?) -> Unit) {
+private fun SampleDialog(type: SampleType, onDismiss: () -> Unit, onSave: (String, Money?, DateOrder?) -> Unit) {
     val clipboard = LocalClipboardManager.current
     var text by remember { mutableStateOf("") }
     var amountText by remember { mutableStateOf("") }
     var touched by remember { mutableStateOf(false) }
+    var order by remember { mutableStateOf<DateOrder?>(null) }
+    var orderTouched by remember { mutableStateOf(false) }
     LaunchedEffect(text) {
         if (!touched) amountText = TemplateLearner.detectAmount(text, ZoneId.systemDefault())?.toPlainString() ?: ""
+        if (!orderTouched) order = DateParsing.guessOrder(text)
     }
     val amount = Money.parseOrNull(amountText)
+    val locale = currentLocale()
+    val parsedDate = order?.let { DateParsing.parse(text, it, ZoneId.systemDefault()) }
     AlertDialog(onDismissRequest = onDismiss, icon = { Icon(sampleIcon(type), null) }, title = { Text(sampleLabel(type)) }, text = {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(text, { text = it }, Modifier.fillMaxWidth().heightIn(min = 120.dp), label = { Text(stringResource(R.string.sample_paste_hint)) },
                 textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content))
             TextButton(onClick = { clipboard.getText()?.text?.let { text = it } }) { Icon(AppIcons.download, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.paste)) }
             OutlinedTextField(amountText, { amountText = it; touched = true }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.sample_amount)) },
                 singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), suffix = { Text(stringResource(R.string.currency_sar)) },
                 isError = amountText.isNotEmpty() && amount == null, supportingText = { Text(stringResource(R.string.sample_amount_hint)) })
+            // Date shown with the selected day/month/year order; the user picks the right order (e.g. 26/10/26 = 26 Oct 2026).
+            if (text.isNotBlank()) {
+                Text(stringResource(R.string.sample_date_format), style = MaterialTheme.typography.labelLarge)
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    DateOrder.entries.forEach { o ->
+                        FilterChip(order == o, { order = o; orderTouched = true }, { Text(stringResource(when (o) {
+                            DateOrder.DMY -> R.string.date_order_dmy; DateOrder.YMD -> R.string.date_order_ymd; DateOrder.MDY -> R.string.date_order_mdy })) })
+                    }
+                }
+                Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceContainerHighest) {
+                    Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(AppIcons.calendar, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
+                        Text(if (parsedDate != null) stringResource(R.string.sample_date_is, Fmt.dateTime(parsedDate, locale)) else stringResource(R.string.sample_date_not_found),
+                            style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
         }
-    }, confirmButton = { TextButton(enabled = text.isNotBlank() && amount != null, onClick = { onSave(text, amount) }) { Text(stringResource(R.string.save)) } },
+    }, confirmButton = { TextButton(enabled = text.isNotBlank() && amount != null, onClick = { onSave(text, amount, if (parsedDate != null) order else null) }) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
 }
 

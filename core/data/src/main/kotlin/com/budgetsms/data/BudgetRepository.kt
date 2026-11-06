@@ -309,8 +309,8 @@ class BudgetRepository(
 
     private suspend fun registry(): ParserRegistry = ParserRegistry(emptyList(), LearnedParser(decodeTemplates(settings.setting(K_SAMPLES))))
 
-    suspend fun saveSample(type: SampleType, sample: String, amount: Money?) {
-        val list = decodeTemplates(settings.setting(K_SAMPLES)) + TemplateLearner.learn(id(), type, sample, amount)
+    suspend fun saveSample(type: SampleType, sample: String, amount: Money?, dateOrder: com.budgetsms.domain.sms.DateOrder? = null) {
+        val list = decodeTemplates(settings.setting(K_SAMPLES)) + TemplateLearner.learn(id(), type, sample, amount, dateOrder)
         settings.upsertSetting(AppSettingEntity(K_SAMPLES, encodeTemplates(list))); audit("learn_sample", "MessageTemplate", type.name)
     }
     suspend fun deleteSample(templateId: String) {
@@ -320,7 +320,7 @@ class BudgetRepository(
 
     private fun encodeTemplates(l: List<MessageTemplate>): String = org.json.JSONArray().apply {
         l.forEach { t -> put(org.json.JSONObject().put("id", t.id).put("type", t.type.name).put("first", t.firstLine)
-            .put("pre", t.amountPrefix).put("suf", t.amountSuffix).put("tokens", org.json.JSONArray(t.tokens.toList()))) }
+            .put("pre", t.amountPrefix).put("suf", t.amountSuffix).put("date", t.dateOrder?.name ?: "").put("tokens", org.json.JSONArray(t.tokens.toList()))) }
     }.toString()
 
     private fun decodeTemplates(json: String?): List<MessageTemplate> = runCatching {
@@ -328,7 +328,8 @@ class BudgetRepository(
         (0 until a.length()).mapNotNull { i -> val o = a.getJSONObject(i)
             val type = runCatching { SampleType.valueOf(o.getString("type")) }.getOrNull() ?: return@mapNotNull null
             val tk = o.getJSONArray("tokens")
-            MessageTemplate(o.getString("id"), type, (0 until tk.length()).map { tk.getString(it) }.toSet(), o.optString("first"), o.optString("pre"), o.optString("suf"))
+            MessageTemplate(o.getString("id"), type, (0 until tk.length()).map { tk.getString(it) }.toSet(), o.optString("first"), o.optString("pre"), o.optString("suf"),
+                runCatching { com.budgetsms.domain.sms.DateOrder.valueOf(o.optString("date")) }.getOrNull())
         }
     }.getOrDefault(emptyList())
 

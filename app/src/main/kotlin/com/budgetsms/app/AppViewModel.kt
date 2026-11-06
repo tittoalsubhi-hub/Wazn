@@ -51,8 +51,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val templates = repo.templates.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** Learns a sample, then re-reads stored messages and re-imports from the device so similar messages are processed. */
-    fun saveSample(type: com.budgetsms.domain.sms.SampleType, text: String, amount: Money?) = act(R.string.msg_sample_saved) {
-        repo.saveSample(type, text, amount); repo.reprocessUndecided(all = true)
+    fun saveSample(type: com.budgetsms.domain.sms.SampleType, text: String, amount: Money?, dateOrder: com.budgetsms.domain.sms.DateOrder?) = act(R.string.msg_sample_saved) {
+        repo.saveSample(type, text, amount, dateOrder); repo.reprocessUndecided(all = true)
         if (device.hasReadPermission()) syncDeviceInternal()
     }
     fun deleteSample(id: String) = act { repo.deleteSample(id); repo.reprocessUndecided(all = true) }

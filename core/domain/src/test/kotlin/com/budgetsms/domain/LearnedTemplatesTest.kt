@@ -49,4 +49,18 @@ class LearnedTemplatesTest {
         assertEquals(1, r.newEvents.size); assertEquals(EventState.CONFIRMED, r.newEvents[0].state); assertEquals(Money.parse("150.25"), r.newEvents[0].amount)
         assertEquals(1, r.ignored.values.sum())
     }
+
+    @Test fun dateOrderLearnedFromSample() {
+        val sample = "حوالة محلية صادرة بـ200 SR\nمن1111\nلـ2222;اسم المستفيد\nرسوم:SR 0.58\n26/10/26 11:04"
+        assertEquals(DateOrder.DMY, DateParsing.guessOrder(sample))
+        assertEquals(t("2026-10-26T11:04"), DateParsing.parse(sample, DateOrder.DMY, RIYADH))
+        assertEquals(t("2026-10-26T11:04"), DateParsing.parse("2026-10-26 11:04", DateOrder.YMD, RIYADH))
+        assertEquals(t("2026-10-26T11:04"), DateParsing.parse("10/26/2026 11:04", DateOrder.MDY, RIYADH))
+        val g = GenericKeywordParser.parse(RawSms("f", "B", Instant.EPOCH, sample), RIYADH)
+        assertEquals(EventKind.OUTGOING_TRANSFER, g.kind); assertEquals(Money.parse("200"), g.amount); assertEquals(Money.parse("0.58"), g.fee)
+        // A bank that writes year/month/day with two-digit years: only the learned order reads it correctly.
+        val tpl = TemplateLearner.learn("o", SampleType.OUTGOING_TRANSFER, "حوالة صادرة SAR 50.00\n26/10/05 09:30", Money.parse("50"), DateOrder.YMD)
+        val p = LearnedParser(listOf(tpl)).parse(RawSms("f", "B", Instant.EPOCH, "حوالة صادرة SAR 75.00\n26/11/03 08:15"), RIYADH)
+        assertEquals(t("2026-11-03T08:15"), p.executedAt)
+    }
 }

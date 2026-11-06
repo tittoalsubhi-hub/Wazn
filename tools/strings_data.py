@@ -504,3 +504,11 @@ sample_amount_hint|Check it; correct it if the app picked the wrong number.|تأ
 sample_saved_count|Learned formats: %1$d|الصيغ المتعلَّمة: %1$d
 msg_sample_saved|Sample learned; messages re-read|تم تعلّم النموذج وإعادة قراءة الرسائل
 """
+S += r"""
+sample_date_format|Date format in this message|صيغة التاريخ في هذه الرسالة
+date_order_dmy|Day/Month/Year|يوم/شهر/سنة
+date_order_ymd|Year/Month/Day|سنة/شهر/يوم
+date_order_mdy|Month/Day/Year|شهر/يوم/سنة
+sample_date_is|Date: %1$s|التاريخ: %1$s
+sample_date_not_found|No date found in this message|لم يُعثر على تاريخ في الرسالة
+"""

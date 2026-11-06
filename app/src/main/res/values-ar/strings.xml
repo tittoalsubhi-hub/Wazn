@@ -494,4 +494,10 @@
     <string name="sample_amount_hint">تأكد منه، وصحّحه إن اختار التطبيق رقماً خطأ.</string>
     <string name="sample_saved_count">الصيغ المتعلَّمة: %1$d</string>
     <string name="msg_sample_saved">تم تعلّم النموذج وإعادة قراءة الرسائل</string>
+    <string name="sample_date_format">صيغة التاريخ في هذه الرسالة</string>
+    <string name="date_order_dmy">يوم/شهر/سنة</string>
+    <string name="date_order_ymd">سنة/شهر/يوم</string>
+    <string name="date_order_mdy">شهر/يوم/سنة</string>
+    <string name="sample_date_is">التاريخ: %1$s</string>
+    <string name="sample_date_not_found">لم يُعثر على تاريخ في الرسالة</string>
 </resources>

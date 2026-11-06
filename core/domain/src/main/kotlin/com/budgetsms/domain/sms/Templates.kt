@@ -26,7 +26,32 @@ data class MessageTemplate(
     val firstLine: String,
     val amountPrefix: String,
     val amountSuffix: String,
+    /** Date order confirmed by the user for this bank's messages (e.g. 26/10/26 = day/month/year). */
+    val dateOrder: DateOrder? = null,
 )
+
+enum class DateOrder { DMY, YMD, MDY }
+
+/** Reads dates such as 26/10/26, 2026-11-05 or 28-10-26 with an explicit day/month/year order, plus the HH:mm time. */
+object DateParsing {
+    private val dateRe = Regex("""(?<![\d٠-٩])(\d{1,4})[-/.](\d{1,2})[-/.](\d{1,4})(?![\d٠-٩])""")
+    private val timeRe = Regex("""(?<![\d٠-٩:])(\d{1,2}):(\d{2})(?![\d٠-٩])""")
+
+    /** Suggested order: 4-digit first part = year/month/day, otherwise day/month/year (common in Saudi bank SMS). */
+    fun guessOrder(text: String): DateOrder? {
+        val m = dateRe.find(text) ?: return null
+        return if (m.groupValues[1].length == 4) DateOrder.YMD else DateOrder.DMY
+    }
+
+    fun parse(text: String, order: DateOrder, zone: java.time.ZoneId): java.time.Instant? = runCatching {
+        val m = dateRe.find(text) ?: return null
+        val (a, b, c) = m.destructured
+        val (y, mo, d) = when (order) { DateOrder.DMY -> Triple(c, b, a); DateOrder.YMD -> Triple(a, b, c); DateOrder.MDY -> Triple(c, a, b) }
+        val year = y.toInt().let { if (it < 100) 2000 + it else it }
+        val t = timeRe.find(text)
+        java.time.LocalDateTime.of(year, mo.toInt(), d.toInt(), t?.groupValues?.get(1)?.toInt() ?: 0, t?.groupValues?.get(2)?.toInt() ?: 0).atZone(zone).toInstant()
+    }.getOrNull()
+}
 
 object TemplateLearner {
     private val digit = Regex("[0-9٠-٩]")
@@ -45,7 +70,7 @@ object TemplateLearner {
      * Learns where the amount sits: the words just before and after it on the same line.
      * [amount] is the value the user confirmed for this sample (detected or typed).
      */
-    fun learn(id: String, type: SampleType, sample: String, amount: Money?): MessageTemplate {
+    fun learn(id: String, type: SampleType, sample: String, amount: Money?, dateOrder: DateOrder? = null): MessageTemplate {
         var prefix = ""; var suffix = ""
         if (amount != null) {
             val numRe = Regex("""(?<![*\d٠-٩.,٬٫])${GenericKeywordParser.NUMBER}(?![*\d٠-٩])""")
@@ -57,7 +82,7 @@ object TemplateLearner {
                 break
             }
         }
-        return MessageTemplate(id, type, tokens(sample), firstLine(sample), prefix, suffix)
+        return MessageTemplate(id, type, tokens(sample), firstLine(sample), prefix, suffix, dateOrder)
     }
 
     /** Per-mille share of the template's fixed words found in the message, plus a bonus for the same first line (integer maths). */
@@ -91,15 +116,20 @@ class LearnedParser(private val templates: List<MessageTemplate>, private val ba
     override val verifiedForBank = false
     override fun supports(bankId: String) = true
 
+    /** The date order the user confirmed most often; used for messages that match no template. */
+    private val defaultOrder: DateOrder? = templates.mapNotNull { it.dateOrder }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key
+
     fun match(text: String): MessageTemplate? =
         templates.map { it to TemplateLearner.score(it, text) }.filter { it.second >= threshold }.maxByOrNull { it.second }?.first
 
     override fun parse(sms: RawSms, zone: ZoneId): ParsedSms {
         val g = base.parse(sms, zone)
-        val t = match(sms.body) ?: return g
+        val t = match(sms.body) ?: return defaultOrder?.let { o -> DateParsing.parse(sms.body, o, zone)?.let { g.copy(executedAt = it, reasons = g.reasons - ReviewReason.UNTRUSTED_TIMESTAMP) } } ?: g
         val amount = TemplateLearner.extractAmount(t, sms.body) ?: g.amount
-        val reasons = g.reasons - ReviewReason.UNSUPPORTED_FORMAT - (if (amount != null) setOf(ReviewReason.MISSING_AMOUNT) else emptySet())
-        return g.copy(kind = t.type.kind, amount = if (g.currency == "SAR") amount else g.amount, reasons = reasons,
+        val at = t.dateOrder?.let { DateParsing.parse(sms.body, it, zone) } ?: g.executedAt
+        val reasons = g.reasons - ReviewReason.UNSUPPORTED_FORMAT - (if (amount != null) setOf(ReviewReason.MISSING_AMOUNT) else emptySet()) -
+            (if (at != null) setOf(ReviewReason.UNTRUSTED_TIMESTAMP) else emptySet())
+        return g.copy(kind = t.type.kind, amount = if (g.currency == "SAR") amount else g.amount, reasons = reasons, executedAt = at,
             categoryHint = t.type.categoryHint ?: g.categoryHint)
     }
 }
