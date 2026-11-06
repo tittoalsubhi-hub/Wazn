@@ -84,7 +84,7 @@ class ReportExporter(base: Context) {
     private fun state(st: EventState) = s(when (st) {
         EventState.CONFIRMED -> R.string.state_confirmed; EventState.UNDER_REVIEW -> R.string.state_review; EventState.REVERSED -> R.string.state_reversed
         EventState.DUPLICATE -> R.string.state_duplicate; EventState.PENDING_FX -> R.string.state_pending_fx; EventState.DISCOVERED -> R.string.state_discovered
-        EventState.UNAPPROVED -> R.string.state_unapproved })
+        EventState.UNAPPROVED -> R.string.state_unapproved; EventState.IGNORED -> R.string.state_ignored })
 
     /** StaticLayout shapes Arabic correctly and handles RTL paragraphs; pages break automatically. */
     private fun writePdf(tables: List<Table>, file: File) {

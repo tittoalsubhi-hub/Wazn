@@ -57,6 +57,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var backgroundedAt: Long = 0L
 
     init {
+        repo.defaultProfileName = app.getString(R.string.default_profile_name)
         viewModelScope.launch {
             snapshot.filter { it.ledger != null }.collect { dispatchAlerts(it) }
         }
@@ -124,17 +125,24 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun revokeSender(senderId: String) = act(R.string.msg_sender_revoked) { repo.revokeSender(senderId) }
     fun setAutoConfirm(senderId: String, on: Boolean) = act(R.string.msg_saved) { repo.setAutoConfirm(senderId, on) }
 
-    fun syncDevice() = act(R.string.msg_synced) { syncDeviceInternal() }
+    fun syncDevice() = act { syncDeviceInternal() }
 
     private suspend fun syncDeviceInternal() {
         val approved = repo.approvedSenders().map { it.senderId }.toSet()
         val raw = snapshot.value.discoveredSenders.filter { it.senderId in approved }
             .flatMap { it.rawAddresses.split('\u001F') }.filter { it.isNotBlank() && SenderNormalizer.normalize(it) in approved }
         val batch = withContext(Dispatchers.IO) { device.readApproved(raw) }
-        repo.ingest(batch)
+        reportImport(repo.ingestFromLastSalary(batch))
     }
 
-    fun importSmsBackup(uri: Uri) = act(R.string.msg_imported) {
+    private fun reportImport(r: Pair<com.budgetsms.domain.ingest.IngestResult, Instant?>) {
+        val (res, salaryAt) = r
+        val locale = getApplication<Application>().resources.configuration.locales[0]
+        if (salaryAt != null) say(R.string.msg_import_from_salary, com.budgetsms.app.ui.components.Fmt.day(salaryAt, locale) + " · " + res.newEvents.size)
+        else say(R.string.msg_import_no_salary, res.newEvents.size.toString())
+    }
+
+    fun importSmsBackup(uri: Uri) = act {
         val ctx = getApplication<Application>()
         val size = ctx.contentResolver.openFileDescriptor(uri, "r")?.use { it.statSize } ?: -1L
         val batch = withContext(Dispatchers.IO) { ctx.contentResolver.openInputStream(uri)!!.use { SmsBackupReader.read(it, size, uri.lastPathSegment ?: "file") } }
@@ -142,7 +150,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val grouped = batch.groupBy { SenderNormalizer.normalize(it.header.sender) }
         repo.saveDiscovered(com.budgetsms.domain.sms.SenderDiscovery.summarize(batch.asSequence().map { it.header }),
             grouped.mapValues { (_, v) -> v.map { it.header.sender }.toSet() })
-        repo.ingest(batch)
+        reportImport(repo.ingestFromLastSalary(batch))
     }
 
     fun reprocess() = act(R.string.msg_reprocessed) { repo.reprocessUndecided() }

@@ -131,7 +131,7 @@
     <string name="state_duplicate">Duplicate</string>
     <string name="state_pending_fx">Waiting for SAR amount</string>
     <string name="reason_unsupported">Message format is not supported yet</string>
-    <string name="reason_low_confidence">Read by the general reader — please confirm</string>
+    <string name="reason_low_confidence">Not processed automatically — please confirm</string>
     <string name="reason_missing_amount">Amount not found in the message</string>
     <string name="reason_missing_account">Account not linked</string>
     <string name="reason_duplicate">Looks like a possible duplicate</string>
@@ -383,13 +383,13 @@
     <string name="secure_screen">Hide in recent apps</string>
     <string name="secure_screen_sub">Blocks screenshots and previews</string>
     <string name="encryption_note">Your data is encrypted on this device with a key protected by Android Keystore.</string>
-    <string name="senders_explain">Only messages from senders you approve are ever read. Others are identified by sender name only.</string>
+    <string name="senders_explain">Only messages from senders you approve are read. Import starts from your latest salary message; verification codes are ignored.</string>
     <string name="discover_senders">Find senders on this phone</string>
     <string name="approved_senders">Approved senders</string>
     <string name="discovered_senders">Discovered senders</string>
     <string name="messages_n">%1$d messages</string>
-    <string name="trust_format">Trust this sender\'s format</string>
-    <string name="trust_format_sub">Auto-confirm messages whose only uncertainty is the general reader</string>
+    <string name="trust_format">Process automatically</string>
+    <string name="trust_format_sub">Confirm this bank\'s messages automatically for its account (any card). Codes are ignored.</string>
     <string name="approve_sender_x">Approve %1$s</string>
     <string name="approve_sender_body">Approving lets the app read this sender\'s past and future messages. It creates no transaction by itself.</string>
     <string name="approve_sender_first">Approve a bank sender first to add accounts.</string>
@@ -457,4 +457,19 @@
     <string name="msg_backup_done">Encrypted backup saved</string>
     <string name="msg_restored">Restored (new/duplicates skipped): %1$s</string>
     <string name="msg_wrong_password">Wrong password or damaged file</string>
+    <string name="gradients_background">Gradients &amp; background</string>
+    <string name="gradient_level">Gradient on icons and cards</string>
+    <string name="gradient_off">Off</string>
+    <string name="gradient_subtle">Subtle</string>
+    <string name="gradient_vivid">Vivid</string>
+    <string name="background_style">Background</string>
+    <string name="bg_plain">Plain</string>
+    <string name="bg_gradient">Gradient</string>
+    <string name="bg_aurora">Aurora</string>
+    <string name="gradient_second_color">Second gradient color</string>
+    <string name="auto">Automatic</string>
+    <string name="state_ignored">Ignored (code)</string>
+    <string name="default_profile_name">My account</string>
+    <string name="msg_import_from_salary">Imported from last salary (%1$s)</string>
+    <string name="msg_import_no_salary">No salary message found; imported the last 30 days (%1$s)</string>
 </resources>

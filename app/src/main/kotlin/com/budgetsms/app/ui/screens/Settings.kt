@@ -105,6 +105,28 @@ fun AppearanceScreen(vm: AppViewModel, pref: AppearancePreference) {
                 if (ratio < 4.5) Text(stringResource(R.string.low_contrast_adjusted), style = MaterialTheme.typography.labelSmall, color = LocalSemantic.current.review)
             }
         }
+        SectionCard(stringResource(R.string.gradients_background), icon = AppIcons.wallpaper) {
+            Text(stringResource(R.string.gradient_level), style = MaterialTheme.typography.labelLarge)
+            ChoiceRow(GradientLevel.entries, pref.gradient, { stringResource(when (it) { GradientLevel.OFF -> R.string.gradient_off; GradientLevel.SUBTLE -> R.string.gradient_subtle; GradientLevel.VIVID -> R.string.gradient_vivid }) },
+                { v -> vm.updateAppearance { it.copy(gradient = v) } })
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.background_style), style = MaterialTheme.typography.labelLarge)
+            ChoiceRow(BackgroundStyle.entries, pref.background, { stringResource(when (it) { BackgroundStyle.PLAIN -> R.string.bg_plain; BackgroundStyle.GRADIENT -> R.string.bg_gradient; BackgroundStyle.AURORA -> R.string.bg_aurora }) },
+                { v -> vm.updateAppearance { it.copy(background = v) } })
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.gradient_second_color), style = MaterialTheme.typography.labelLarge)
+            FilterChip(pref.gradientSeed == 0L, { vm.updateAppearance { it.copy(gradientSeed = 0L) } }, { Text(stringResource(R.string.auto)) })
+            ACCENT_SWATCHES.chunked(10).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(vertical = 3.dp)) {
+                    row.forEach { sw ->
+                        val sel = pref.gradientSeed == sw
+                        Box(Modifier.size(28.dp).clip(CircleShape).background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary, Color(sw))))
+                            .border(if (sel) 3.dp else 1.dp, if (sel) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                            .clickable { vm.updateAppearance { it.copy(gradientSeed = sw) } })
+                    }
+                }
+            }
+        }
         SectionCard(stringResource(R.string.contrast_and_shape), icon = AppIcons.contrast) {
             Text(stringResource(R.string.contrast), style = MaterialTheme.typography.labelLarge)
             ChoiceRow(ContrastLevel.entries, pref.contrast, { stringResource(when (it) { ContrastLevel.STANDARD -> R.string.contrast_standard; ContrastLevel.MEDIUM -> R.string.contrast_medium; ContrastLevel.HIGH -> R.string.contrast_high }) },

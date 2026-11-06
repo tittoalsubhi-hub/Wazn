@@ -180,19 +180,19 @@ private fun HeroCard(v: BudgetView) {
     val sem = LocalSemantic.current
     val cs = MaterialTheme.colorScheme
     val frac = if (v.funded.halalas <= 0) 0f else (v.spent.halalas.toFloat() / v.funded.halalas)
+    val (heroBrush, onHero) = com.budgetsms.app.ui.theme.heroFill()
     Card(shape = MaterialTheme.shapes.extraLarge, colors = CardDefaults.cardColors(containerColor = Color.Transparent)) {
-        Box(Modifier.background(Brush.linearGradient(listOf(cs.primaryContainer, cs.tertiaryContainer.copy(alpha = 0.85f)))).padding(20.dp)) {
+        Box(Modifier.background(heroBrush).padding(20.dp)) {
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.remaining_budget), style = MaterialTheme.typography.labelLarge, color = cs.onPrimaryContainer)
-                        AmountText(v.remaining, style = MaterialTheme.typography.amountLarge.copy(fontWeight = FontWeight.Bold),
-                            color = if (v.remaining.isNegative) sem.overspend else cs.onPrimaryContainer)
+                        Text(stringResource(R.string.remaining_budget), style = MaterialTheme.typography.labelLarge, color = onHero)
+                        AmountText(v.remaining, style = MaterialTheme.typography.amountLarge.copy(fontWeight = FontWeight.Bold), color = onHero)
                         Spacer(Modifier.height(4.dp))
                         Row { ProvenanceChip(if (v.underReview.isPositive) Provenance.UNDER_REVIEW else Provenance.CALCULATED) }
                     }
-                    ProgressRing(frac, Modifier.size(92.dp), color = if (frac > 1f) sem.overspend else cs.primary, track = cs.surface.copy(alpha = 0.5f)) {
-                        Text("${(frac * 100).toInt().coerceAtMost(999)}%", style = MaterialTheme.typography.titleMedium, color = cs.onPrimaryContainer)
+                    ProgressRing(frac, Modifier.size(92.dp), color = if (frac > 1f) sem.overspend else onHero, track = onHero.copy(alpha = 0.22f)) {
+                        Text("${(frac * 100).toInt().coerceAtMost(999)}%", style = MaterialTheme.typography.titleMedium, color = onHero)
                     }
                 }
                 if (v.remaining.isNegative) { Spacer(Modifier.height(8.dp)); MessageBanner(stringResource(R.string.budget_negative_note), AppIcons.warning, sem.overspend) }
@@ -207,7 +207,7 @@ private fun HeroCard(v: BudgetView) {
                     StatTile(stringResource(R.string.under_review), v.underReview, Provenance.UNDER_REVIEW, AppIcons.review, sem.review, Modifier.weight(1f))
                 }
                 Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.unallocated_note, money(v.unallocated)), style = MaterialTheme.typography.labelMedium, color = cs.onPrimaryContainer)
+                Text(stringResource(R.string.unallocated_note, money(v.unallocated)), style = MaterialTheme.typography.labelMedium, color = onHero)
             }
         }
     }

@@ -39,6 +39,7 @@ import com.budgetsms.app.ui.icons.AppIcons
 import com.budgetsms.app.ui.icons.FloatingIcon
 import com.budgetsms.app.ui.icons.ProgressRing
 import com.budgetsms.app.ui.theme.LocalMotion
+import com.budgetsms.app.ui.theme.appBackground
 import com.budgetsms.domain.appearance.AnimationLevel
 import com.budgetsms.domain.appearance.AppLanguage
 import com.budgetsms.domain.appearance.Palette
@@ -53,7 +54,7 @@ fun OnboardingScreen(vm: AppViewModel) {
     val s by vm.snapshot.collectAsStateWithLifecycle()
     val motion = LocalMotion.current
     val cs = MaterialTheme.colorScheme
-    Surface(Modifier.fillMaxSize()) {
+    Surface(Modifier.fillMaxSize().appBackground(), color = Color.Transparent) {
         Column(Modifier.fillMaxSize().systemBarsPadding().imePadding()) {
             LinearProgressIndicator(progress = { (step + 1) / 5f }, Modifier.fillMaxWidth().padding(16.dp), drawStopIndicator = {})
             AnimatedContent(step, Modifier.weight(1f), label = "step", transitionSpec = {

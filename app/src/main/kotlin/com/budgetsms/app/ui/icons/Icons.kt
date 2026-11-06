@@ -61,7 +61,7 @@ object AppIcons {
     val home = Icons.Rounded.SpaceDashboard to Icons.Outlined.SpaceDashboard
     val activity = Icons.AutoMirrored.Rounded.ReceiptLong to Icons.AutoMirrored.Outlined.ReceiptLong
     val budget = Icons.Rounded.DonutLarge to Icons.Outlined.DonutLarge
-    val goals = Icons.Rounded.Savings to Icons.Outlined.Savings
+    val goals = RiyalSymbol to RiyalSymbol
     val more = Icons.Rounded.GridView to Icons.Outlined.GridView
     val bank = Icons.Rounded.AccountBalance; val profile = Icons.Rounded.Person; val obligations = Icons.Rounded.EventRepeat
     val forecast = Icons.AutoMirrored.Rounded.TrendingUp; val reports = Icons.Rounded.Assessment; val security = Icons.Rounded.Shield

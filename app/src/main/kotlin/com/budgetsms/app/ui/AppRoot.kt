@@ -35,6 +35,8 @@ import com.budgetsms.app.ui.icons.AppIcons
 import com.budgetsms.app.ui.icons.SyncIcon
 import com.budgetsms.app.ui.screens.*
 import com.budgetsms.app.ui.theme.LocalMotion
+import com.budgetsms.app.ui.theme.appBackground
+import androidx.compose.ui.graphics.Color
 import com.budgetsms.data.SettingKeys
 import com.budgetsms.domain.appearance.AnimationLevel
 import com.budgetsms.domain.appearance.AppearancePreference
@@ -75,8 +77,9 @@ private fun MainScaffold(vm: AppViewModel, pref: AppearancePreference) {
     val alertCount = snapshot.ledger?.alerts?.size ?: 0
     val reviewCount = snapshot.ledger?.reviews?.map { it.eventId }?.distinct()?.size ?: 0
 
-    Row(Modifier.fillMaxSize()) {
-        if (wide) NavigationRail(Modifier.fillMaxHeight()) {
+    val translucent = com.budgetsms.app.ui.theme.LocalGradients.current.background != com.budgetsms.domain.appearance.BackgroundStyle.PLAIN
+    Row(Modifier.fillMaxSize().appBackground()) {
+        if (wide) NavigationRail(Modifier.fillMaxHeight(), containerColor = if (translucent) Color.Transparent else MaterialTheme.colorScheme.surface) {
             Spacer(Modifier.height(24.dp))
             Tab.entries.forEach { t ->
                 NavigationRailItem(selected = route == t.route, onClick = { nav.goTab(t) },
@@ -85,6 +88,7 @@ private fun MainScaffold(vm: AppViewModel, pref: AppearancePreference) {
         }
         Scaffold(
             modifier = Modifier.weight(1f),
+            containerColor = Color.Transparent,
             snackbarHost = { SnackbarHost(snackbar) },
             topBar = {
                 TopAppBar(
@@ -94,11 +98,11 @@ private fun MainScaffold(vm: AppViewModel, pref: AppearancePreference) {
                         IconButton(onClick = { vm.syncDevice() }) { SyncIcon(busy, stringResource(R.string.sync_now)) }
                         IconButton(onClick = { nav.navigate("home") }) { AlertBell(alertCount, stringResource(R.string.alerts)) }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = if (translucent) Color.Transparent else MaterialTheme.colorScheme.surface),
                 )
             },
             bottomBar = {
-                if (!wide) NavigationBar {
+                if (!wide) NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = if (translucent) 0.86f else 1f)) {
                     Tab.entries.forEach { t ->
                         NavigationBarItem(selected = route == t.route, onClick = { nav.goTab(t) },
                             icon = { BadgedIcon(t, route == t.route, if (t == Tab.ACTIVITY) reviewCount else 0) },
@@ -198,7 +202,7 @@ fun LockScreen(vm: AppViewModel) {
             .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK).build())
     }
     LaunchedEffect(bio) { if (bio) prompt() }
-    Surface(Modifier.fillMaxSize()) {
+    Surface(Modifier.fillMaxSize().appBackground(), color = Color.Transparent) {
         Column(Modifier.fillMaxSize().padding(32.dp).imePadding(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(AppIcons.lock, null, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.height(16.dp))

@@ -134,6 +134,10 @@ fun BudgetTheme(pref: AppearancePreference, content: @Composable () -> Unit) {
         LocalMotion provides effectiveMotion(pref),
         LocalMaskAmounts provides pref.maskAmounts,
     ) {
-        MaterialTheme(colorScheme = scheme, shapes = shapesFor(pref.corners), typography = Typography(), content = content)
+        val end = if (pref.gradientSeed != 0L) Color(ColorMath.tone(pref.gradientSeed, if (dark) 76 else 44)) else scheme.tertiary
+        val gradients = GradientSpec(pref.gradient, pref.background, scheme.primary, end)
+        MaterialTheme(colorScheme = scheme, shapes = shapesFor(pref.corners), typography = Typography()) {
+            CompositionLocalProvider(LocalGradients provides gradients, content = content)
+        }
     }
 }

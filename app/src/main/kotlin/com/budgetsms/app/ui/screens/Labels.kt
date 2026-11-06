@@ -26,7 +26,7 @@ import com.budgetsms.data.AppSnapshot
     EventState.DISCOVERED -> R.string.state_discovered; EventState.UNAPPROVED -> R.string.state_unapproved
     EventState.UNDER_REVIEW -> R.string.state_review; EventState.CONFIRMED -> R.string.state_confirmed
     EventState.REVERSED -> R.string.state_reversed; EventState.DUPLICATE -> R.string.state_duplicate
-    EventState.PENDING_FX -> R.string.state_pending_fx
+    EventState.PENDING_FX -> R.string.state_pending_fx; EventState.IGNORED -> R.string.state_ignored
 })
 
 @Composable fun reasonLabel(r: ReviewReason) = stringResource(when (r) {

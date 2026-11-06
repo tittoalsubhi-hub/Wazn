@@ -88,11 +88,24 @@ class BudgetRepository(
 ) {
     private val sms = db.sms(); private val ledger = db.ledger(); private val plan = db.plan(); private val settings = db.settings()
     private val ingestMutex = Mutex()
+    /** Name used for the profile created automatically on first sender approval (set by the app, localised). */
+    var defaultProfileName: String = "Main"
+    private val MIGRATION_AUTO = "migration.autoProcess.v13"
+    private val K_GRADIENT = "appearance.gradient"
+    private val K_BACKGROUND = "appearance.background"
+    private val K_GRADIENT_SEED = "appearance.gradientSeed"
     private val engine = LedgerEngine()
     private val savingsEngine = SavingsEngine()
     @Volatile var lastInput: LedgerInput? = null; private set
 
-    val appearance: Flow<AppearancePreference> = settings.observeAppearance().map { it.toDomain() }
+    val appearance: Flow<AppearancePreference> = combine(settings.observeAppearance(), settings.observeSettings()) { e, st ->
+        val m = st.associate { it.key to it.value }
+        e.toDomain().copy(
+            gradient = m[K_GRADIENT]?.let { v -> runCatching { com.budgetsms.domain.appearance.GradientLevel.valueOf(v) }.getOrNull() } ?: com.budgetsms.domain.appearance.GradientLevel.VIVID,
+            background = m[K_BACKGROUND]?.let { v -> runCatching { com.budgetsms.domain.appearance.BackgroundStyle.valueOf(v) }.getOrNull() } ?: com.budgetsms.domain.appearance.BackgroundStyle.AURORA,
+            gradientSeed = m[K_GRADIENT_SEED]?.toLongOrNull() ?: 0L,
+        )
+    }
     val audit: Flow<List<AuditLogEntity>> = settings.observeAudit(200)
 
     @Suppress("UNCHECKED_CAST")
@@ -194,14 +207,30 @@ class BudgetRepository(
         if (ledger.categoryCount() == 0) ledger.upsertCategories(defaultCategories)
         if (settings.setting(SettingKeys.ACTIVATION_AT) == null) settings.upsertSetting(AppSettingEntity(SettingKeys.ACTIVATION_AT, ms().toString()))
         if (settings.appearance() == null) settings.upsertAppearance(AppearancePreference().toEntity(ms()))
+        // v1.3: approved senders are processed automatically at bank-account level (user request).
+        if (settings.setting(MIGRATION_AUTO) == null) {
+            sms.approved().filter { it.revokedAt == null }.forEach { sms.upsertApproved(it.copy(autoConfirm = true)); ensureBankAccount(it.bankId) }
+            settings.upsertSetting(AppSettingEntity(MIGRATION_AUTO, ms().toString()))
+        }
     }
 
     suspend fun setSetting(key: String, value: String) { settings.upsertSetting(AppSettingEntity(key, value)); if (key != SettingKeys.PIN_HASH) audit("setting", "setting", key, value) else audit("setting", "setting", key, "***") }
     suspend fun setting(key: String): String? = settings.setting(key)
 
     suspend fun updateAppearance(transform: (AppearancePreference) -> AppearancePreference) = db.withTransaction {
-        val current = settings.appearance().toDomain(); val next = transform(current)
-        if (next != current) { settings.upsertAppearance(next.toEntity(ms())); audit("appearance", "UserAppearancePreference", "1", next.toString()) }
+        val m = mapOf(K_GRADIENT to settings.setting(K_GRADIENT), K_BACKGROUND to settings.setting(K_BACKGROUND), K_GRADIENT_SEED to settings.setting(K_GRADIENT_SEED))
+        val current = settings.appearance().toDomain().copy(
+            gradient = m[K_GRADIENT]?.let { runCatching { com.budgetsms.domain.appearance.GradientLevel.valueOf(it) }.getOrNull() } ?: com.budgetsms.domain.appearance.GradientLevel.VIVID,
+            background = m[K_BACKGROUND]?.let { runCatching { com.budgetsms.domain.appearance.BackgroundStyle.valueOf(it) }.getOrNull() } ?: com.budgetsms.domain.appearance.BackgroundStyle.AURORA,
+            gradientSeed = m[K_GRADIENT_SEED]?.toLongOrNull() ?: 0L)
+        val next = transform(current)
+        if (next != current) {
+            settings.upsertAppearance(next.toEntity(ms()))
+            settings.upsertSetting(AppSettingEntity(K_GRADIENT, next.gradient.name))
+            settings.upsertSetting(AppSettingEntity(K_BACKGROUND, next.background.name))
+            settings.upsertSetting(AppSettingEntity(K_GRADIENT_SEED, next.gradientSeed.toString()))
+            audit("appearance", "UserAppearancePreference", "1", next.toString())
+        }
     }
 
     // ---------------- senders & ingestion (§04) ----------------
@@ -211,9 +240,30 @@ class BudgetRepository(
     suspend fun addBank(name: String, color: Long): String { val b = BankEntity(id(), name.trim(), color); ledger.upsertBank(b); audit("create", "bank", b.id, name); return b.id }
 
     /** Approval permits historical and future processing; it never creates a bank event by itself. */
-    suspend fun approveSender(senderId: String, bankId: String) {
+    suspend fun approveSender(senderId: String, bankId: String) = db.withTransaction {
         val id = SenderNormalizer.normalize(senderId)
-        sms.upsertApproved(ApprovedSenderEntity(id, bankId, ms(), null)); audit("approve", "sender", id, bankId)
+        sms.upsertApproved(ApprovedSenderEntity(id, bankId, ms(), null, autoConfirm = true)); audit("approve", "sender", id, bankId)
+        ensureBankAccount(bankId)
+    }
+
+    /** Every message of an approved bank is booked to one bank-level account; created once, with a default profile if needed. */
+    private suspend fun ensureBankAccount(bankId: String) {
+        if (ledger.accounts().any { it.bankId == bankId && it.type != AccountType.CREDIT_CARD.name }) return
+        var profileId = ledger.profiles().firstOrNull()?.id
+        if (profileId == null) {
+            profileId = id()
+            ledger.upsertProfile(ProfileEntity(profileId, defaultProfileName, CycleType.SALARY.name, RenewalMode.MANUAL.name, null, 30, "NONE", 0, null, 0xFF1B6B2A, "person", ms()))
+        }
+        val bankName = ledger.banks().firstOrNull { it.id == bankId }?.name ?: bankId
+        ledger.upsertAccount(AccountEntity(id(), bankId, profileId, AccountType.CURRENT.name, "", bankName, true))
+        audit("create", "account", bankId, "bank-level account")
+    }
+
+    /** Imports only the latest salary message and everything after it (fallback: last 30 days). */
+    suspend fun ingestFromLastSalary(batch: List<IncomingSms>): Pair<IngestResult, Instant?> {
+        val gate = ConsentGate(sms.approved().map { ApprovedSender(it.senderId, it.bankId, it.approvedAt.toInstant(), it.revokedAt?.toInstant()) })
+        val (window, salaryAt) = com.budgetsms.domain.ingest.ImportWindow.sinceLastSalary(batch, gate, zone, clock())
+        return ingest(window) to salaryAt
     }
     suspend fun revokeSender(senderId: String) {
         val e = sms.approved().firstOrNull { it.senderId == senderId } ?: return
@@ -228,7 +278,8 @@ class BudgetRepository(
     suspend fun ingest(batch: List<IncomingSms>, batchId: String = id()): IngestResult = ingestMutex.withLock {
         val approved = sms.approved()
         val gate = ConsentGate(approved.map { ApprovedSender(it.senderId, it.bankId, it.approvedAt.toInstant(), it.revokedAt?.toInstant()) })
-        val pipeline = IngestionPipeline(gate, parsers, ledger.accounts().map { it.toDomain() }, zone, clock)
+        val pipeline = IngestionPipeline(gate, parsers, ledger.accounts().map { it.toDomain() }, zone, clock,
+            autoConfirmSenders = approved.filter { it.autoConfirm && it.revokedAt == null }.map { it.senderId }.toSet())
         val existing = ledger.events()
         val state = IngestState(sms.allFingerprints().toSet(), sms.allSourceKeys().toSet(), existing.associate { it.id to it.toDomain() },
             approved.filter { it.autoConfirm && it.revokedAt == null }.map { it.senderId }.toSet())
@@ -248,7 +299,8 @@ class BudgetRepository(
     suspend fun reprocessUndecided(): Int = ingestMutex.withLock {
         val approved = sms.approved()
         val gate = ConsentGate(approved.map { ApprovedSender(it.senderId, it.bankId, it.approvedAt.toInstant(), it.revokedAt?.toInstant()) })
-        val pipeline = IngestionPipeline(gate, parsers, ledger.accounts().map { it.toDomain() }, zone, clock)
+        val pipeline = IngestionPipeline(gate, parsers, ledger.accounts().map { it.toDomain() }, zone, clock,
+            autoConfirmSenders = approved.filter { it.autoConfirm && it.revokedAt == null }.map { it.senderId }.toSet())
         val targets = ledger.events().filter { !it.userDecided && it.state == EventState.UNDER_REVIEW.name }
         var n = 0
         db.withTransaction {
@@ -256,6 +308,9 @@ class BudgetRepository(
             for (t in targets) {
                 val raw = raws[t.rawSmsIds.substringBefore(',')] ?: continue
                 if (!gate.isApproved(raw.sender)) continue
+                if (com.budgetsms.domain.ingest.OneTimeCodeFilter.isOneTimeCode(raw.body)) {
+                    ledger.upsertEvent(t.copy(state = EventState.IGNORED.name, reviewReasons = "", updatedAt = ms())); n++; continue
+                }
                 val e = pipeline.toEvent(com.budgetsms.domain.sms.RawSms(raw.fingerprint, raw.sender, raw.receivedAt.toInstant(), raw.body))
                 if (e.id == t.id) { ledger.upsertEvent(e.copy(rawSmsIds = t.toDomain().rawSmsIds).toEntity(false, ms())); n++ }
             }

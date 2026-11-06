@@ -1,6 +1,6 @@
 # Acceptance-test map
 
-Domain tests run on the JVM (`./gradlew :core:domain:test`) and were executed while building this version: **36/36 passing**.
+Domain tests run on the JVM (`./gradlew :core:domain:test`) and were executed while building this version: **41/41 passing** (incl. Riyad Bank format tests).
 
 | Test | Where | Status |
 |---|---|---|

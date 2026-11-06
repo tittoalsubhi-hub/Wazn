@@ -131,7 +131,7 @@
     <string name="state_duplicate">مكررة</string>
     <string name="state_pending_fx">بانتظار المبلغ بالريال</string>
     <string name="reason_unsupported">صيغة الرسالة غير مدعومة بعد</string>
-    <string name="reason_low_confidence">قُرئت بالقارئ العام — يرجى التأكيد</string>
+    <string name="reason_low_confidence">لم تُعالج تلقائياً — يرجى التأكيد</string>
     <string name="reason_missing_amount">لم يُعثر على المبلغ في الرسالة</string>
     <string name="reason_missing_account">الحساب غير مربوط</string>
     <string name="reason_duplicate">قد تكون مكررة</string>
@@ -383,13 +383,13 @@
     <string name="secure_screen">إخفاء في التطبيقات الأخيرة</string>
     <string name="secure_screen_sub">يمنع لقطات الشاشة والمعاينات</string>
     <string name="encryption_note">بياناتك مشفرة على هذا الجهاز بمفتاح محمي بمخزن مفاتيح أندرويد.</string>
-    <string name="senders_explain">لا تُقرأ إلا رسائل الجهات التي تعتمدها. غيرها يُعرف باسم المرسل فقط.</string>
+    <string name="senders_explain">لا تُقرأ إلا رسائل الجهات التي تعتمدها. يبدأ الاستيراد من آخر رسالة راتب، وتُتجاهل رموز التحقق.</string>
     <string name="discover_senders">البحث عن الجهات في هذا الجهاز</string>
     <string name="approved_senders">الجهات المعتمدة</string>
     <string name="discovered_senders">الجهات المكتشفة</string>
     <string name="messages_n">عدد الرسائل: %1$d</string>
-    <string name="trust_format">الوثوق بصيغة هذه الجهة</string>
-    <string name="trust_format_sub">تأكيد تلقائي للرسائل التي لا يوجد فيها إلا عدم يقين القارئ العام</string>
+    <string name="trust_format">معالجة تلقائية</string>
+    <string name="trust_format_sub">اعتماد رسائل هذا البنك تلقائياً على حسابه (أي بطاقة). تُتجاهل رموز التحقق.</string>
     <string name="approve_sender_x">اعتماد %1$s</string>
     <string name="approve_sender_body">الاعتماد يسمح بقراءة رسائل هذه الجهة السابقة والقادمة، ولا ينشئ أي عملية بحد ذاته.</string>
     <string name="approve_sender_first">اعتمد جهة بنكية أولاً لإضافة الحسابات.</string>
@@ -457,4 +457,19 @@
     <string name="msg_backup_done">تم حفظ النسخة المشفرة</string>
     <string name="msg_restored">تمت الاستعادة (جديد/متجاوز): %1$s</string>
     <string name="msg_wrong_password">كلمة مرور خاطئة أو ملف تالف</string>
+    <string name="gradients_background">التدرجات والخلفية</string>
+    <string name="gradient_level">التدرج في الأيقونات والبطاقات</string>
+    <string name="gradient_off">بدون</string>
+    <string name="gradient_subtle">خفيف</string>
+    <string name="gradient_vivid">حيوي</string>
+    <string name="background_style">الخلفية</string>
+    <string name="bg_plain">سادة</string>
+    <string name="bg_gradient">متدرجة</string>
+    <string name="bg_aurora">شفق</string>
+    <string name="gradient_second_color">اللون الثاني للتدرج</string>
+    <string name="auto">تلقائي</string>
+    <string name="state_ignored">متجاهلة (رمز)</string>
+    <string name="default_profile_name">حسابي</string>
+    <string name="msg_import_from_salary">تم الاستيراد من آخر راتب (%1$s)</string>
+    <string name="msg_import_no_salary">لم يُعثر على رسالة راتب؛ تم استيراد آخر ٣٠ يوماً (%1$s)</string>
 </resources>

@@ -32,7 +32,7 @@ class BudgetApp : Application() {
             val c = AppContainer(this)
             container = c
             c.notifier.createChannels()
-            c.scope.launch { c.repository.ensureDefaults(DefaultCategories.all()) }
+            c.scope.launch { c.repository.ensureDefaults(DefaultCategories.all()); c.repository.reprocessUndecided() }
         } catch (e: DatabaseUnavailableException) {
             startupError = e
         } catch (t: Throwable) {

@@ -10,10 +10,13 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 enum class ContrastLevel { STANDARD, MEDIUM, HIGH }
 enum class CornerStyle { ROUNDED, SOFT, SHARP }
 enum class AnimationLevel { FULL, REDUCED, OFF }
+enum class GradientLevel { OFF, SUBTLE, VIVID }
+enum class BackgroundStyle { PLAIN, GRADIENT, AURORA }
 enum class AppLanguage(val tag: String) { SYSTEM(""), ARABIC("ar"), ENGLISH("en") }
 
 /** Built-in palettes. Seeds are sRGB ARGB values; full light/dark schemes are generated from them. */
 enum class Palette(val seed: Long, val nameEn: String, val nameAr: String) {
+    FOREST(0xFF1B6B2A, "Wazn green", "أخضر وازن"),
     TEAL(0xFF0F8A8F, "Teal", "فيروزي"),
     EMERALD(0xFF1E9E63, "Emerald", "زمردي"),
     OCEAN(0xFF1F6FD1, "Ocean", "محيطي"),
@@ -29,8 +32,8 @@ enum class Palette(val seed: Long, val nameEn: String, val nameAr: String) {
 /** Persisted per device as UserAppearancePreference; included in backups (addendum, T32). */
 data class AppearancePreference(
     val mode: ThemeMode = ThemeMode.SYSTEM,
-    val palette: Palette = Palette.TEAL,
-    val customSeed: Long = 0xFF0F8A8F,
+    val palette: Palette = Palette.FOREST,
+    val customSeed: Long = 0xFF1B6B2A,
     val dynamicColor: Boolean = false,
     val contrast: ContrastLevel = ContrastLevel.STANDARD,
     val corners: CornerStyle = CornerStyle.ROUNDED,
@@ -39,6 +42,12 @@ data class AppearancePreference(
     val language: AppLanguage = AppLanguage.SYSTEM,
     val maskAmounts: Boolean = false,
     val fontScale: Int = 100,
+    /** Gradient intensity for icons and cards. */
+    val gradient: GradientLevel = GradientLevel.VIVID,
+    /** Static app background. */
+    val background: BackgroundStyle = BackgroundStyle.AURORA,
+    /** Second gradient colour; 0 = automatic (tertiary colour of the palette). */
+    val gradientSeed: Long = 0,
 ) {
     val seed: Long get() = if (palette == Palette.CUSTOM) customSeed else palette.seed
 }

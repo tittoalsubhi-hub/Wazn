@@ -130,7 +130,7 @@ state_reversed|Reversed|معكوسة
 state_duplicate|Duplicate|مكررة
 state_pending_fx|Waiting for SAR amount|بانتظار المبلغ بالريال
 reason_unsupported|Message format is not supported yet|صيغة الرسالة غير مدعومة بعد
-reason_low_confidence|Read by the general reader — please confirm|قُرئت بالقارئ العام — يرجى التأكيد
+reason_low_confidence|Not processed automatically — please confirm|لم تُعالج تلقائياً — يرجى التأكيد
 reason_missing_amount|Amount not found in the message|لم يُعثر على المبلغ في الرسالة
 reason_missing_account|Account not linked|الحساب غير مربوط
 reason_duplicate|Looks like a possible duplicate|قد تكون مكررة
@@ -382,13 +382,13 @@ use_biometric|Use fingerprint or face|استخدم البصمة أو الوجه
 secure_screen|Hide in recent apps|إخفاء في التطبيقات الأخيرة
 secure_screen_sub|Blocks screenshots and previews|يمنع لقطات الشاشة والمعاينات
 encryption_note|Your data is encrypted on this device with a key protected by Android Keystore.|بياناتك مشفرة على هذا الجهاز بمفتاح محمي بمخزن مفاتيح أندرويد.
-senders_explain|Only messages from senders you approve are ever read. Others are identified by sender name only.|لا تُقرأ إلا رسائل الجهات التي تعتمدها. غيرها يُعرف باسم المرسل فقط.
+senders_explain|Only messages from senders you approve are read. Import starts from your latest salary message; verification codes are ignored.|لا تُقرأ إلا رسائل الجهات التي تعتمدها. يبدأ الاستيراد من آخر رسالة راتب، وتُتجاهل رموز التحقق.
 discover_senders|Find senders on this phone|البحث عن الجهات في هذا الجهاز
 approved_senders|Approved senders|الجهات المعتمدة
 discovered_senders|Discovered senders|الجهات المكتشفة
 messages_n|%1$d messages|عدد الرسائل: %1$d
-trust_format|Trust this sender's format|الوثوق بصيغة هذه الجهة
-trust_format_sub|Auto-confirm messages whose only uncertainty is the general reader|تأكيد تلقائي للرسائل التي لا يوجد فيها إلا عدم يقين القارئ العام
+trust_format|Process automatically|معالجة تلقائية
+trust_format_sub|Confirm this bank's messages automatically for its account (any card). Codes are ignored.|اعتماد رسائل هذا البنك تلقائياً على حسابه (أي بطاقة). تُتجاهل رموز التحقق.
 approve_sender_x|Approve %1$s|اعتماد %1$s
 approve_sender_body|Approving lets the app read this sender's past and future messages. It creates no transaction by itself.|الاعتماد يسمح بقراءة رسائل هذه الجهة السابقة والقادمة، ولا ينشئ أي عملية بحد ذاته.
 approve_sender_first|Approve a bank sender first to add accounts.|اعتمد جهة بنكية أولاً لإضافة الحسابات.
@@ -458,6 +458,23 @@ msg_restored|Restored (new/duplicates skipped): %1$s|تمت الاستعادة (
 msg_wrong_password|Wrong password or damaged file|كلمة مرور خاطئة أو ملف تالف
 """
 def rows():
-    for line in S.strip().splitlines():
+    for line in [l for l in S.strip().splitlines() if l.strip()]:
         k, en, ar = line.split("|", 2)
         yield k.strip(), en, ar
+S += r"""
+gradients_background|Gradients & background|التدرجات والخلفية
+gradient_level|Gradient on icons and cards|التدرج في الأيقونات والبطاقات
+gradient_off|Off|بدون
+gradient_subtle|Subtle|خفيف
+gradient_vivid|Vivid|حيوي
+background_style|Background|الخلفية
+bg_plain|Plain|سادة
+bg_gradient|Gradient|متدرجة
+bg_aurora|Aurora|شفق
+gradient_second_color|Second gradient color|اللون الثاني للتدرج
+auto|Automatic|تلقائي
+state_ignored|Ignored (code)|متجاهلة (رمز)
+default_profile_name|My account|حسابي
+msg_import_from_salary|Imported from last salary (%1$s)|تم الاستيراد من آخر راتب (%1$s)
+msg_import_no_salary|No salary message found; imported the last 30 days (%1$s)|لم يُعثر على رسالة راتب؛ تم استيراد آخر ٣٠ يوماً (%1$s)
+"""

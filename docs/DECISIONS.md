@@ -15,3 +15,8 @@
 | D-11 | Google Play | SMS permissions are restricted on Google Play; approval is not guaranteed. Debug builds are for personal installation. | Open |
 | D-12 | Backup format | `BSMSBK1` + PBKDF2-SHA256 (210k) + AES-256-GCM + inner SHA-256; restore is INSERT OR IGNORE on stable keys. | Implemented |
 | D-13 | SMS import format | SMS Backup & Restore XML; ≤50 MB, ≤200k records, ≤2000 chars per body; DOCTYPE rejected; inbox only. | Implemented |
+| D-14 | Import window (owner request, v1.3) | Device sync and backup import take only the latest salary message and everything after it; if none is found, the last 30 days. | Implemented |
+| D-15 | Verification codes (v1.3) | OTP / “do not share” messages are ignored and never stored. | Implemented |
+| D-16 | Automatic processing (v1.3) | Approved bank senders are processed automatically (supersedes the review-first default of D-05). Missing amount, possible duplicates, foreign currency without SAR debit and unrecognised messages still go to review. Incoming transfers default to “fund the budget” and can be changed. | Implemented |
+| D-17 | Bank-level account (v1.3) | All messages of a bank are booked to one bank-level account created on approval, regardless of card digits. Credit-card purchases stay excluded from the budget. | Implemented |
+| D-18 | Amount source | The amount is the number written next to a currency code (SAR, ر.س …); card digits and bill numbers are never used. | Implemented |

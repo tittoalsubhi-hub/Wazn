@@ -29,6 +29,8 @@ interface SmsDao {
 interface LedgerDao {
     @Query("SELECT * FROM bank ORDER BY name") fun observeBanks(): Flow<List<BankEntity>>
     @Upsert suspend fun upsertBank(b: BankEntity)
+    @Query("SELECT * FROM bank") suspend fun banks(): List<BankEntity>
+    @Query("SELECT * FROM profile ORDER BY createdAt") suspend fun profiles(): List<ProfileEntity>
     @Query("SELECT * FROM profile ORDER BY createdAt") fun observeProfiles(): Flow<List<ProfileEntity>>
     @Upsert suspend fun upsertProfile(p: ProfileEntity)
     @Query("SELECT * FROM account ORDER BY displayName") fun observeAccounts(): Flow<List<AccountEntity>>

@@ -40,7 +40,7 @@ fun ActivityScreen(vm: AppViewModel, onOpenEvent: (String) -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
     val locale = currentLocale(); val zone = ZoneId.systemDefault()
     val reviewIds = s.ledger?.reviews?.map { it.eventId }?.toSet().orEmpty()
-    val events = s.events.filter { e ->
+    val events = s.events.filter { e -> e.state != EventState.IGNORED &&
         (sel == null || s.account(e.accountId)?.profileId == sel || e.accountId == null) &&
             when (filter) {
                 ActivityFilter.ALL -> true

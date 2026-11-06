@@ -42,6 +42,11 @@ import com.budgetsms.app.ui.icons.FloatingIcon
 import com.budgetsms.app.ui.theme.LocalMaskAmounts
 import com.budgetsms.app.ui.theme.LocalMotion
 import com.budgetsms.app.ui.theme.LocalSemantic
+import com.budgetsms.app.ui.theme.cardBrush
+import com.budgetsms.app.ui.theme.iconFill
+import com.budgetsms.app.ui.icons.RiyalSymbol
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.isSpecified
 import com.budgetsms.domain.appearance.AnimationLevel
 import com.budgetsms.domain.model.Provenance
 import com.budgetsms.domain.money.Money
@@ -95,7 +100,12 @@ fun AmountText(value: Money, modifier: Modifier = Modifier, style: TextStyle = M
     }
     val display = if (anim.value >= 1f || motion != AnimationLevel.FULL) value
         else Money(from.halalas + ((value.halalas - from.halalas) * anim.value.toDouble()).toLong())
-    Text(money(display), modifier, style = style.copy(fontFeatureSettings = "tnum"), color = color, maxLines = 1, overflow = TextOverflow.Visible)
+    val iconSize = with(LocalDensity.current) { if (style.fontSize.isSpecified) (style.fontSize * 0.92f).toDp() else 16.dp }
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        Text(money(display, currency = false), style = style.copy(fontFeatureSettings = "tnum"), color = color, maxLines = 1, overflow = TextOverflow.Visible)
+        Spacer(Modifier.width(iconSize * 0.25f))
+        Icon(RiyalSymbol, stringResource(R.string.currency_sar), Modifier.size(iconSize), tint = color)
+    }
 }
 
 @Composable
@@ -126,9 +136,10 @@ fun ProvenanceChip(p: Provenance, modifier: Modifier = Modifier) {
 @Composable
 fun SectionCard(title: String?, modifier: Modifier = Modifier, icon: ImageVector? = null, action: (@Composable () -> Unit)? = null,
                 container: Color = MaterialTheme.colorScheme.surfaceContainerLow, content: @Composable ColumnScope.() -> Unit) {
+    val brush = cardBrush(container)
     Card(modifier.fillMaxWidth().animateContentSize(), shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = container)) {
-        Column(Modifier.padding(16.dp)) {
+        colors = CardDefaults.cardColors(containerColor = if (brush != null) Color.Transparent else container)) {
+        Column((if (brush != null) Modifier.background(brush) else Modifier).padding(16.dp)) {
             if (title != null) Row(verticalAlignment = Alignment.CenterVertically) {
                 if (icon != null) { IconBadge(icon, MaterialTheme.colorScheme.primary); Spacer(Modifier.width(10.dp)) }
                 Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
@@ -142,15 +153,18 @@ fun SectionCard(title: String?, modifier: Modifier = Modifier, icon: ImageVector
 
 @Composable
 fun IconBadge(icon: ImageVector, color: Color, size: Int = 36) {
-    Box(Modifier.size(size.dp).clip(MaterialTheme.shapes.medium).background(color.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
-        Icon(icon, null, Modifier.size((size * 0.56f).dp), tint = color)
+    val (fill, tint) = iconFill(color)
+    Box(Modifier.size(size.dp).clip(MaterialTheme.shapes.medium).background(fill), contentAlignment = Alignment.Center) {
+        Icon(icon, null, Modifier.size((size * 0.56f).dp), tint = tint)
     }
 }
 
 @Composable
 fun StatTile(label: String, value: Money?, provenance: Provenance, icon: ImageVector, color: Color, modifier: Modifier = Modifier) {
-    Surface(modifier, shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainer) {
-        Column(Modifier.padding(12.dp)) {
+    val base = MaterialTheme.colorScheme.surfaceContainer
+    val brush = cardBrush(base)
+    Surface(modifier, shape = MaterialTheme.shapes.medium, color = if (brush != null) Color.Transparent else base) {
+        Column((if (brush != null) Modifier.background(brush) else Modifier).padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, null, Modifier.size(18.dp), tint = color); Spacer(Modifier.width(6.dp))
                 Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)

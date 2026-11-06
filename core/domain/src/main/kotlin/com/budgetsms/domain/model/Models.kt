@@ -57,7 +57,7 @@ enum class EventKind(val direction: Direction) {
 }
 
 /** States for messages and transactions (spec §04). Only CONFIRMED contributes to spending. */
-enum class EventState { DISCOVERED, UNAPPROVED, UNDER_REVIEW, CONFIRMED, REVERSED, DUPLICATE, PENDING_FX }
+enum class EventState { DISCOVERED, UNAPPROVED, UNDER_REVIEW, CONFIRMED, REVERSED, DUPLICATE, PENDING_FX, IGNORED }
 
 enum class TimeSource { BANK, RECEIPT, USER_CORRECTED }
 enum class Confidence { HIGH, MEDIUM, LOW }

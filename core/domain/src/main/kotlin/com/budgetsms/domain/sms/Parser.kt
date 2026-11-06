@@ -58,6 +58,7 @@ object GenericKeywordParser : SmsParser {
     private val toRe = Regex("""(?:إلى|الى|to)\s*(?:حساب|acc(?:oun)?t?)?\s*\**\s*([0-9٠-٩]{3,4})\b""", RegexOption.IGNORE_CASE)
     private val refRe = Regex("""(?:ref(?:erence)?\.?|المرجع|مرجع|رقم العملية|رقم المرجع|trx|txn)\s*(?:no\.?|#)?\s*[:：]?\s*([A-Za-z0-9]{5,})""", RegexOption.IGNORE_CASE)
     private val dateRe = Regex("""\b(\d{4})[-/](\d{1,2})[-/](\d{1,2})[ T]+(\d{1,2}):(\d{2})""")
+    private val timeDateRe = Regex("""\b(\d{1,2}):(\d{2})\s+(\d{4})[-/](\d{1,2})[-/](\d{1,2})\b""")
     private val dmyRe = Regex("""\b(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})\s+(\d{1,2}):(\d{2})""")
 
     private val rules: List<Pair<EventKind, List<String>>> = listOf(
@@ -72,7 +73,8 @@ object GenericKeywordParser : SmsParser {
         EventKind.FEE to listOf("رسوم خدمة", "service fee", "annual fee", "رسوم سنوية"),
         EventKind.OUTGOING_TRANSFER to listOf("حوالة صادرة", "تحويل صادر", "outgoing transfer", "transfer to", "تحويل إلى", "حوالة إلى", "sent"),
         EventKind.INCOMING_TRANSFER to listOf("حوالة واردة", "تحويل وارد", "incoming transfer", "received", "إيداع", "deposit", "credited"),
-        EventKind.PURCHASE_DEBIT to listOf("شراء", "purchase", "pos", "نقاط البيع", "مدى", "mada", "apple pay"),
+        EventKind.PURCHASE_DEBIT to listOf("شراء", "purchase", "pos", "نقاط البيع", "مدى", "mada", "apple pay",
+            "سداد فاتورة", "سداد الفواتير", "سداد", "دفع فاتورة", "مدفوعات", "bill payment", "payment"),
     )
 
     override fun parse(sms: RawSms, zone: ZoneId): ParsedSms {
@@ -140,6 +142,10 @@ object GenericKeywordParser : SmsParser {
     private fun parseDate(text: String, zone: ZoneId): Instant? = runCatching {
         dateRe.find(text)?.let { m ->
             val (y, mo, d, h, mi) = m.destructured
+            return LocalDateTime.of(y.toInt(), mo.toInt(), d.toInt(), h.toInt(), mi.toInt()).atZone(zone).toInstant()
+        }
+        timeDateRe.find(text)?.let { m ->
+            val (h, mi, y, mo, d) = m.destructured
             return LocalDateTime.of(y.toInt(), mo.toInt(), d.toInt(), h.toInt(), mi.toInt()).atZone(zone).toInstant()
         }
         dmyRe.find(text)?.let { m ->
