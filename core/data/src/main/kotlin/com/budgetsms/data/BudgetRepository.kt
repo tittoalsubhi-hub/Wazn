@@ -150,8 +150,9 @@ class BudgetRepository(
         val savingsTransfers = result.transfers.mapNotNull { t ->
             val out = eventById[t.outgoingId] ?: return@mapNotNull null
             val dest = accById[out.counterpartyAccountId] ?: return@mapNotNull null
-            if (dest.type != AccountType.SAVINGS || out.accountId == null) return@mapNotNull null
-            VerifiedSavingsTransfer(out.id, out.sarAmount, out.accountId, input.profileOf(out.accountId, out.executedAt) ?: "", dest.id, out.executedAt, t.incomingId != null)
+            val src = out.accountId ?: return@mapNotNull null
+            if (dest.type != AccountType.SAVINGS) return@mapNotNull null
+            VerifiedSavingsTransfer(out.id, out.sarAmount, src, input.profileOf(src, out.executedAt) ?: "", dest.id, out.executedAt, t.incomingId != null)
         }
         val installments = installmentsE.map { it.toDomain() }
         val (goalStatus, transferStatus) = runCatching { savingsEngine.status(goals, savingsTransfers, installments) }
