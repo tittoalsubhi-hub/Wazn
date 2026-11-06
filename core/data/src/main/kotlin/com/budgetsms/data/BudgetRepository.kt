@@ -312,7 +312,9 @@ class BudgetRepository(
                 if (com.budgetsms.domain.ingest.IgnoreFilter.reason(raw.body) != null) {
                     ledger.upsertEvent(t.copy(state = EventState.IGNORED.name, reviewReasons = "", updatedAt = ms())); n++; continue
                 }
-                if (t.state != EventState.UNDER_REVIEW.name) continue
+                // Re-read events under review, and auto-processed events read by an older parser version.
+                val outdated = t.parserId == com.budgetsms.domain.sms.GenericKeywordParser.id && t.parserVersion < com.budgetsms.domain.sms.GenericKeywordParser.version
+                if (t.state != EventState.UNDER_REVIEW.name && !outdated) continue
                 val e = pipeline.toEvent(com.budgetsms.domain.sms.RawSms(raw.fingerprint, raw.sender, raw.receivedAt.toInstant(), raw.body))
                 if (e.id == t.id) { ledger.upsertEvent(e.copy(rawSmsIds = t.toDomain().rawSmsIds).toEntity(false, ms())); n++ }
             }
@@ -324,13 +326,19 @@ class BudgetRepository(
     suspend fun sourceCount(fingerprint: String) = sms.sourceCount(fingerprint)
 
     // ---------------- review decisions (no manual bank postings) ----------------
-    suspend fun confirmEvent(id: String, kind: EventKind, accountId: String?, counterpartyAccountId: String?, categoryId: String?, treatment: IncomeTreatment?) = db.withTransaction {
+    /** Confirms a reviewed event. [amountOverride] is a manual correction by the user (owner request v1.5), audited with the original value. */
+    suspend fun confirmEvent(id: String, kind: EventKind, accountId: String?, counterpartyAccountId: String?, categoryId: String?, treatment: IncomeTreatment?,
+                             amountOverride: Money? = null) = db.withTransaction {
         val e = ledger.event(id) ?: return@withTransaction
         val d = e.toDomain()
-        require(d.amount != null || kind.direction == EventKind.Direction.NONE) { "amount missing in original message" }
+        val amount = amountOverride ?: d.amount
+        require(amount != null || kind.direction == EventKind.Direction.NONE) { "amount missing" }
+        require(amount == null || !amount.isNegative) { "negative amount" }
         val next = d.copy(kind = kind, accountId = accountId, counterpartyAccountId = counterpartyAccountId, categoryId = categoryId,
-            incomeTreatment = treatment, state = EventState.CONFIRMED, reviewReasons = emptySet())
-        ledger.upsertEvent(next.toEntity(true, ms())); audit("confirm", "BankEvent", id, "kind=$kind acc=$accountId cat=$categoryId treat=$treatment")
+            incomeTreatment = treatment, state = EventState.CONFIRMED, reviewReasons = emptySet(), amount = amount)
+        ledger.upsertEvent(next.toEntity(true, ms()))
+        audit("confirm", "BankEvent", id, "kind=$kind acc=$accountId cat=$categoryId treat=$treatment" +
+            if (amountOverride != null && amountOverride != d.amount) " amount=${d.amount?.toPlainString() ?: "-"}->${amountOverride.toPlainString()} (manual)" else "")
     }
     suspend fun markDuplicate(id: String) = updateEvent(id, "duplicate") { it.copy(state = EventState.DUPLICATE) }
     suspend fun setCategory(id: String, categoryId: String?) = updateEvent(id, "category") { it.copy(categoryId = categoryId) }

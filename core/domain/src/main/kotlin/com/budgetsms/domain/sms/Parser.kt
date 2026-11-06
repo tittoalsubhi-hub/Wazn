@@ -45,13 +45,17 @@ class ParserRegistry(private val parsers: List<SmsParser>, private val fallback:
  */
 object GenericKeywordParser : SmsParser {
     override val id = "generic-keyword"
-    override val version = 1
+    override val version = 2
     override val verifiedForBank = false
     override fun supports(bankId: String) = true
 
     private val num = """([0-9٠-٩]{1,3}(?:[,٬][0-9٠-٩]{3})*(?:[.٫][0-9٠-٩]{1,2})?|[0-9٠-٩]+(?:[.٫][0-9٠-٩]{1,2})?)"""
     private val cur = """(SAR|SR|ر\.?س|ريال|USD|EUR|GBP|AED|KWD|BHD|QAR|OMR|EGP|JOD)"""
-    private val amountRe = Regex("""(?:$cur\s*$num|$num\s*$cur)""", RegexOption.IGNORE_CASE)
+    // The amount is the number written next to the currency on the same line. Numbers touching "*" are
+    // masked card/account digits and are never amounts (e.g. "*1234\nSAR 1,000" -> 1,000).
+    private val nb = """(?<![*\d٠-٩.,٬٫])"""
+    private val na = """(?![*\d٠-٩])"""
+    private val amountRe = Regex("""(?:$cur[ \t\u00A0]*$nb$num$na|$nb$num$na[ \t\u00A0]*$cur)""", RegexOption.IGNORE_CASE)
     private val balanceRe = Regex("""(?:الرصيد|رصيد|balance|bal\.?|avail(?:able)?)\s*[:：]?\s*(?:$cur\s*)?$num""", RegexOption.IGNORE_CASE)
     private val feeRe = Regex("""(?:رسوم|عمولة|fees?|charges?)\s*[:：]?\s*(?:$cur\s*)?$num""", RegexOption.IGNORE_CASE)
     private val accountRe = Regex("""(?:\*{1,}|x{2,}|حساب\s*(?:رقم)?\s*[:：]?\s*\**|acc(?:oun)?t?\s*(?:no\.?)?\s*[:：]?\s*\**|بطاقة\s*\**|card\s*\**)\s*([0-9٠-٩]{3,4})\b""", RegexOption.IGNORE_CASE)
@@ -72,7 +76,8 @@ object GenericKeywordParser : SmsParser {
         EventKind.PURCHASE_CREDIT_CARD to listOf("بطاقة ائتمان", "بطاقة الائتمان", "ائتمانية", "credit card"),
         EventKind.ATM_WITHDRAWAL to listOf("سحب نقدي", "سحب", "atm", "صراف", "cash withdrawal"),
         EventKind.FEE to listOf("رسوم خدمة", "service fee", "annual fee", "رسوم سنوية"),
-        EventKind.OUTGOING_TRANSFER to listOf("حوالة صادرة", "تحويل صادر", "outgoing transfer", "transfer to", "تحويل إلى", "حوالة إلى", "sent"),
+        EventKind.INCOMING_TRANSFER to listOf("حوالة واردة", "حوالة داخلية واردة", "حوالة محلية واردة", "تحويل وارد", "incoming transfer"),
+        EventKind.OUTGOING_TRANSFER to listOf("حوالة داخلية", "حوالة محلية", "حوالة دولية", "حوالة سريعة", "تحويل داخلي", "تحويل محلي", "حوالة صادرة", "تحويل صادر", "outgoing transfer", "transfer to", "تحويل إلى", "حوالة إلى", "sent", "حوالة", "تحويل"),
         EventKind.INCOMING_TRANSFER to listOf("حوالة واردة", "تحويل وارد", "incoming transfer", "received", "إيداع", "deposit", "credited"),
         EventKind.PURCHASE_DEBIT to listOf("شراء", "purchase", "pos", "نقاط البيع", "مدى", "mada", "apple pay",
             "سداد فاتورة", "سداد الفواتير", "سداد", "دفع فاتورة", "مدفوعات", "bill payment", "payment"),

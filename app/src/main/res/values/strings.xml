@@ -472,4 +472,6 @@
     <string name="default_profile_name">My account</string>
     <string name="msg_import_from_salary">Imported from last salary (%1$s)</string>
     <string name="msg_import_no_salary">No salary message found; imported the last 30 days (%1$s)</string>
+    <string name="field_amount_manual">Amount (edit if wrong)</string>
+    <string name="manual_amount_note">Use the amount written next to SAR in the message. Changes are recorded in the audit log.</string>
 </resources>

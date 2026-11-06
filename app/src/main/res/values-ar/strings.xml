@@ -472,4 +472,6 @@
     <string name="default_profile_name">حسابي</string>
     <string name="msg_import_from_salary">تم الاستيراد من آخر راتب (%1$s)</string>
     <string name="msg_import_no_salary">لم يُعثر على رسالة راتب؛ تم استيراد آخر ٣٠ يوماً (%1$s)</string>
+    <string name="field_amount_manual">المبلغ (عدّله إن كان خطأ)</string>
+    <string name="manual_amount_note">استخدم المبلغ المكتوب بجانب SAR في الرسالة. يُسجَّل التعديل في سجل التدقيق.</string>
 </resources>

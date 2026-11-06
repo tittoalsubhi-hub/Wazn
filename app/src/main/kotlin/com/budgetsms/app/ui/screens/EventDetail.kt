@@ -55,6 +55,9 @@ fun EventDetailScreen(vm: AppViewModel, id: String, onDone: () -> Unit) {
     var category by remember(id) { mutableStateOf(e.categoryId) }
     var treatment by remember(id) { mutableStateOf(e.incomeTreatment) }
     var showDate by remember { mutableStateOf(false) }
+    var amountText by remember(id) { mutableStateOf(e.amount?.toPlainString() ?: "") }
+    val manualAmount = Money.parseOrNull(amountText)
+    val editable = !e.isConfirmed
 
     ScreenColumn {
         SectionCard(null) {
@@ -115,10 +118,18 @@ fun EventDetailScreen(vm: AppViewModel, id: String, onDone: () -> Unit) {
                 Picker(stringResource(R.string.field_income_treatment), IncomeTreatment.entries, treatment, { treatmentLabel(it) }, { treatment = it })
                 Text(stringResource(R.string.earmark_note), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            if (editable && kind.direction != EventKind.Direction.NONE) {
+                Spacer(Modifier.height(8.dp))
+                // Manual amount correction for messages under review (owner request); the change is audited.
+                OutlinedTextField(amountText, { amountText = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.field_amount_manual)) },
+                    singleLine = true, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                    suffix = { Text(stringResource(R.string.currency_sar)) }, isError = amountText.isNotEmpty() && manualAmount == null,
+                    supportingText = { Text(stringResource(R.string.manual_amount_note)) })
+            }
             Spacer(Modifier.height(12.dp))
-            if (e.amount == null && kind.direction != EventKind.Direction.NONE) MessageBanner(stringResource(R.string.cannot_confirm_without_amount), AppIcons.warning, sem.review)
+            val amountOk = kind.direction == EventKind.Direction.NONE || (if (editable) manualAmount != null && !manualAmount.isNegative else e.amount != null)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { vm.confirmEvent(id, kind, accountId, counterparty, category, treatment) }, enabled = e.amount != null || kind.direction == EventKind.Direction.NONE) {
+                Button(onClick = { vm.confirmEvent(id, kind, accountId, counterparty, category, treatment, if (editable && manualAmount != e.amount) manualAmount else null) }, enabled = amountOk) {
                     Icon(AppIcons.check, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.confirm))
                 }
                 OutlinedButton(onClick = { vm.markDuplicate(id); onDone() }) { Text(stringResource(R.string.mark_duplicate)) }

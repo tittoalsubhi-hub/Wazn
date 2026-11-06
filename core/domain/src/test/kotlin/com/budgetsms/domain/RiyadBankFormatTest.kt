@@ -96,4 +96,14 @@ class RiyadBankFormatTest {
         val l = com.budgetsms.domain.accounting.LedgerEngine().compute(com.budgetsms.domain.accounting.LedgerInput(listOf(profile("A")), listOf(acc), events = r.newEvents, now = t("2026-11-06T12:00")))
         assertEquals(Money.parse("500"), l.budgetOf("A")!!.spent)
     }
+
+    @Test fun outgoingTransferAmountIsTheOneNextToSar() {
+        for (b in listOf("حوالة داخلية\nلـ اسم المستفيد\n*1234\nSAR 1,000\n28-10-26 07:55", "حوالة داخلية\nلـ اسم المستفيد\n1234*\nSAR 1,000\n28-10-26 07:55",
+                "حوالة داخلية\nلـ اسم المستفيد\n1234\nSAR 1,000\n28-10-26 07:55")) {
+            val p = GenericKeywordParser.parse(raw(b), RIYADH)
+            assertEquals(b, EventKind.OUTGOING_TRANSFER, p.kind); assertEquals(b, Money.parse("1000"), p.amount)
+            assertEquals(t("2026-10-28T07:55"), p.executedAt)
+        }
+        assertEquals(EventKind.INCOMING_TRANSFER, GenericKeywordParser.parse(raw("حوالة واردة\nمن اسم\n*1234\nSAR 300.00"), RIYADH).kind)
+    }
 }

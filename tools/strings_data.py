@@ -478,3 +478,7 @@ default_profile_name|My account|حسابي
 msg_import_from_salary|Imported from last salary (%1$s)|تم الاستيراد من آخر راتب (%1$s)
 msg_import_no_salary|No salary message found; imported the last 30 days (%1$s)|لم يُعثر على رسالة راتب؛ تم استيراد آخر ٣٠ يوماً (%1$s)
 """
+S += r"""
+field_amount_manual|Amount (edit if wrong)|المبلغ (عدّله إن كان خطأ)
+manual_amount_note|Use the amount written next to SAR in the message. Changes are recorded in the audit log.|استخدم المبلغ المكتوب بجانب SAR في الرسالة. يُسجَّل التعديل في سجل التدقيق.
+"""

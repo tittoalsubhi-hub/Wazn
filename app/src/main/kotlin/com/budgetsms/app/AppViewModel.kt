@@ -156,8 +156,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun reprocess() = act(R.string.msg_reprocessed) { repo.reprocessUndecided() }
 
     // ---------------- review decisions ----------------
-    fun confirmEvent(id: String, kind: EventKind, accountId: String?, counterparty: String?, category: String?, treatment: IncomeTreatment?) =
-        act(R.string.msg_confirmed) { repo.confirmEvent(id, kind, accountId, counterparty, category, treatment) }
+    fun confirmEvent(id: String, kind: EventKind, accountId: String?, counterparty: String?, category: String?, treatment: IncomeTreatment?, amount: Money? = null) =
+        act(R.string.msg_confirmed) { repo.confirmEvent(id, kind, accountId, counterparty, category, treatment, amount) }
     fun markDuplicate(id: String) = act(R.string.msg_saved) { repo.markDuplicate(id) }
     fun setCategory(id: String, cat: String?) = act { repo.setCategory(id, cat) }
     fun setTreatment(id: String, t: IncomeTreatment?) = act { repo.setTreatment(id, t) }
